@@ -13,7 +13,7 @@ import sys
 from glob import glob
 from pathlib import Path
 from time import time
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
@@ -42,15 +42,18 @@ class JobSettings(BaseSettings):
         ),
     )
     s5_commands_file: Optional[Path] = Field(
+        default=None,
         validate_default=True,
         description=(
             "Location to save the s5cmd text file to. As default, will save "
             "to the staging folder."
-        )
+        ),
     )
 
     @model_validator(mode="after")
     def set_default_commands_file(self):
+        """If s5_commands_file is None, will default to saving the file to
+        the staging directory."""
         if self.s5_commands_file is None:
             self.s5_commands_file = self.staging_directory / "s5_commands.txt"
         return self
@@ -76,12 +79,13 @@ class CreateS5CommandsJob:
         Parameters
         ----------
         file_path : str
-          Example, '/allen/aind/stage/svc_aind_airflow/prod/abc_123'
+          Example,
+          '/stage/ecephys_12345...-10/abc_123'
 
         Returns
         -------
         str
-          Example, 's3://some_bucket/ecephys_12345_2020-10-10_10-10-10/abc_123'
+          Example, 's3://some_bucket/ecephys_12345...-10-10/abc_123'
 
         """
 
@@ -92,13 +96,44 @@ class CreateS5CommandsJob:
         )
 
     def _create_file_cp_command(self, file_path: str) -> str:
+        """
+        Maps a file path to command for s5cmd
+        Parameters
+        ----------
+        file_path : str
+          Example,
+          '/stage/ecephys_12345...-10/ophys/hello.txt'
+
+        Returns
+        -------
+        str
+          Example,
+          'cp "/stage/ecephys_12345...-10/ophys/hello.txt"
+          "s3://some_bucket/ecephys_12345...-10/ophys/hello.txt"'
+
+        """
         return (
             f'cp "{file_path}" '
             f'"{self._map_file_path_to_s3_location(file_path)}"'
         )
 
     def _create_directory_cp_command(self, directory_path: str) -> str:
+        """
+        Maps a dir path to command for s5cmd
+        Parameters
+        ----------
+        directory_path : str
+          Example,
+          '/stage/ecephys_12345...-10/ophys/sub_dir'
 
+        Returns
+        -------
+        str
+          Example,
+          'cp "/stage/ecephys_12345...-10/ophys/sub_dir/*"
+          "s3://some_bucket/ecephys_12345...-10/ophys/sub_dir/"'
+
+        """
         local_dir = f"{directory_path.rstrip('/')}/*"
         s3_directory = (
             f"{self._map_file_path_to_s3_location(directory_path).rstrip('/')}"
@@ -108,13 +143,12 @@ class CreateS5CommandsJob:
 
     def _get_list_of_upload_commands(self) -> List[str]:
         """
-        Extracts a list of directories from self.job_settings.upload_configs
-        to scan for broken symlinks. The list will be passed into dask to
-        parallelize the scan. Will also scan files in top levels and raise an
-        error if broken symlinks are found when compiling the list of dirs.
+        Scans directory tree of the staging folder to generate a list of files
+        and subdirectories to upload via s5cmd.
         Returns
         -------
-        List[Union[Path, str]]
+        List[str]
+          A list of s5cmd that can be run.
 
         """
 
@@ -138,11 +172,31 @@ class CreateS5CommandsJob:
         return s5_commands
 
     def _save_s5_commands_to_file(self, s5_commands: List[str]) -> None:
+        """
+        Writes list of s5 commands to location defined in configs.
+        Parameters
+        ----------
+        s5_commands : List[str]
+
+        Returns
+        -------
+        None
+
+        """
         with open(self.job_settings.s5_commands_file, "w") as f:
             for line in s5_commands:
                 f.write(f"{line}\n")
 
-    def run_job(self):
+    def run_job(self) -> None:
+        """
+        Runs job.
+        - Scans staging directory to generate list of s5 commands
+        - Saves commands to text file that can be used by s5cmd.
+        Returns
+        -------
+        None
+
+        """
         job_start_time = time()
         list_of_upload_commands = self._get_list_of_upload_commands()
         self._save_s5_commands_to_file(list_of_upload_commands)
