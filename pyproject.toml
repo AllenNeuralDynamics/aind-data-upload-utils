@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "aind-data-upload-utils"
 description = "Generated from aind-library-template"
 license = {text = "MIT"}
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 authors = [
     {name = "Allen Institute for Neural Dynamics"}
 ]
@@ -17,6 +17,8 @@ readme = "README.md"
 dynamic = ["version"]
 
 dependencies = [
+    'dask',
+    'aind-data-transfer-models==0.5.1'
 ]
 
 [project.optional-dependencies]
@@ -38,7 +40,7 @@ version = {attr = "aind_data_upload_utils.__version__"}
 
 [tool.black]
 line-length = 79
-target_version = ['py36']
+target_version = ['py310']
 exclude = '''
 
 (
