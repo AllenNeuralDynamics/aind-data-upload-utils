@@ -158,13 +158,21 @@ class CreateS5CommandsJob:
             base_path = base_path + "/*"
             for sub_path in glob(base_path):
                 if os.path.isfile(Path(sub_path).resolve()):
-                    s5_commands.append(self._create_file_cp_command(Path(sub_path).as_posix()))
+                    s5_commands.append(
+                        self._create_file_cp_command(Path(sub_path).as_posix())
+                    )
         base_path + "/*"
         for sub_path in glob(base_path):
             if os.path.isfile(Path(sub_path).resolve()):
-                s5_commands.append(self._create_file_cp_command(Path(sub_path).as_posix()))
+                s5_commands.append(
+                    self._create_file_cp_command(Path(sub_path).as_posix())
+                )
             elif os.path.isdir(Path(sub_path).resolve()):
-                s5_commands.append(self._create_directory_cp_command(Path(sub_path).as_posix()))
+                s5_commands.append(
+                    self._create_directory_cp_command(
+                        Path(sub_path).as_posix()
+                    )
+                )
             else:
                 raise NotADirectoryError(
                     f"Possible broken file path: {sub_path}"
