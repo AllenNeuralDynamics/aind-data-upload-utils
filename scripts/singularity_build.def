@@ -8,5 +8,5 @@ Stage: build
 
 %post
     cd ${SINGULARITY_ROOTFS}/aind-data-upload-utils
-    pip install .[ephys] --no-cache-dir
+    pip install . --no-cache-dir
     rm -rf ${SINGULARITY_ROOTFS}/aind-data-upload-utils
