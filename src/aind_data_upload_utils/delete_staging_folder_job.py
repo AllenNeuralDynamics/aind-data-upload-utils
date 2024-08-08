@@ -8,7 +8,6 @@ import os
 import re
 import shutil
 import sys
-from glob import glob
 from pathlib import Path
 from re import Pattern
 from time import time
@@ -74,16 +73,22 @@ class DeleteStagingFolderJob:
 
         """
 
-        base_path = self.job_settings.staging_directory.as_posix().rstrip("/")
         sub_directories_to_remove = []
-        for _ in range(0, self.job_settings.num_of_dir_levels + 1):
-            base_path = base_path + "/*"
-        for sub_path in glob(base_path):
-            if os.path.isdir(sub_path) and not os.path.islink(sub_path):
-                sub_directories_to_remove.append(
-                    Path(sub_path).as_posix().rstrip("/")
-                )
-        return sub_directories_to_remove
+        max_depth = self.job_settings.num_of_dir_levels
+
+        def do_scan(start_dir: Path, output: list, depth=0):
+            """Recursively iterate through directories up to max_depth.
+            Modification of:
+            https://stackoverflow.com/a/42720847
+            """
+            for f in start_dir.iterdir():
+                if f.is_dir() and not f.is_symlink() and depth < max_depth:
+                    do_scan(f, output, depth + 1)
+                elif depth == max_depth and f.is_dir() and not f.is_symlink():
+                    output.append(f)
+
+        do_scan(self.job_settings.staging_directory, sub_directories_to_remove)
+        return [d.as_posix() for d in sub_directories_to_remove]
 
     def _remove_directory(self, directory: str) -> None:
         """
