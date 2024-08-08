@@ -79,9 +79,7 @@ class DeleteStagingFolderJob:
         for _ in range(0, self.job_settings.num_of_dir_levels + 1):
             base_path = base_path + "/*"
         for sub_path in glob(base_path):
-            if os.path.isdir(Path(sub_path).resolve()) and not os.path.islink(
-                sub_path
-            ):
+            if os.path.isdir(sub_path) and not os.path.islink(sub_path):
                 sub_directories_to_remove.append(
                     Path(sub_path).as_posix().rstrip("/")
                 )
