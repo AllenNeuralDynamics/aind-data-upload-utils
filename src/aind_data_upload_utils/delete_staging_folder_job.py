@@ -36,6 +36,10 @@ class JobSettings(BaseSettings):
     n_partitions: int = Field(
         default=20, description="Number of dask tasks to run in parallel"
     )
+    dry_run: bool = Field(
+        default=False,
+        description="Log commands without actually deleting anything",
+    )
 
     # In addition to managing permissions, the parent directory
     # pattern is also hard-coded for extra security. We don't want
@@ -100,6 +104,8 @@ class DeleteStagingFolderJob:
                 f"Directory {directory} is not under staging folder! "
                 f"Will not remove automatically!"
             )
+        elif self.job_settings.dry_run:
+            logging.info(f"Removing: {directory}")
         else:
             shutil.rmtree(directory)
 

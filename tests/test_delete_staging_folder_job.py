@@ -101,6 +101,23 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         self.assertEqual(expected_error_message, e.exception.args[0])
         mock_rm_tree.assert_not_called()
 
+    @patch("logging.info")
+    @patch("shutil.rmtree")
+    def test_remove_directory_dry_run(
+        self, mock_rm_tree: MagicMock, mock_log_info: MagicMock
+    ):
+        """Tests _remove_directory when dry_run is set to True."""
+
+        job_settings = JobSettings(
+            staging_directory=SMART_SPIM_DIR, num_of_dir_levels=1, dry_run=True
+        )
+        job = DeleteStagingFolderJob(job_settings=job_settings)
+        job._remove_directory("/allen/aind/stage/svc_aind_airflow/dev/abc")
+        mock_log_info.assert_called_once_with(
+            "Removing: /allen/aind/stage/svc_aind_airflow/dev/abc"
+        )
+        mock_rm_tree.assert_not_called()
+
     @patch("shutil.rmtree")
     @patch("logging.debug")
     def test_dask_task_to_process_directory_list(
