@@ -23,7 +23,7 @@ logging.basicConfig(level=LOG_LEVEL)
 
 
 class JobSettings(BaseSettings):
-    """Job settings for UploadJob"""
+    """Job settings for DeleteStagingFolderJob"""
 
     staging_directory: Path = Field(
         ..., description="staging folder to delete"
