@@ -49,12 +49,11 @@ class JobSettings(BaseSettings):
 
 
 class DeleteStagingFolderJob:
-    """Job to scan basic upload job configs source directories for broken
-    symlinks"""
+    """Job to delete a staging folder. Uses dask to prune subdirectories."""
 
     def __init__(self, job_settings: JobSettings):
         """
-        Class constructor for UploadJob.
+        Class constructor for DeleteStagingFolderJob.
 
         Parameters
         ----------
@@ -65,7 +64,7 @@ class DeleteStagingFolderJob:
     def _get_list_of_sub_directories(self) -> List[str]:
         """
         Extracts a list from self.job_settings.staging_directory.
-        Will travers self.job_settings.num_of_dir_levels deep.
+        Will traverse self.job_settings.num_of_dir_levels deep.
         Returns
         -------
         List[str]
@@ -136,7 +135,6 @@ class DeleteStagingFolderJob:
             logging.debug(
                 f"Removing {directory}. On {dir_counter} of {total_to_scan}"
             )
-            # Verify directory to remove is under staging directory!
             self._remove_directory(directory)
 
     def _remove_subdirectories(self, sub_directories: List[str]) -> None:
