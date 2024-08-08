@@ -161,7 +161,7 @@ class CreateS5CommandsJob:
                     s5_commands.append(
                         self._create_file_cp_command(Path(sub_path).as_posix())
                     )
-        base_path + "/*"
+        base_path = base_path + "/*"
         for sub_path in glob(base_path):
             if os.path.isfile(Path(sub_path).resolve()):
                 s5_commands.append(

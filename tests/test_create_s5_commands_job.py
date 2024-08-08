@@ -61,61 +61,53 @@ class TestCheckDirectoriesJob(unittest.TestCase):
                 f'"s3://some_bucket/some_prefix/SmartSPIM/nohup.out"'
             ),
             (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'ASI_logging.txt" '
-                f'"s3://some_bucket/some_prefix/derivatives/ASI_logging.txt"'
+                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/ASI_logging.txt"'
+                f' "s3://some_bucket/some_prefix/derivatives/ASI_logging.txt"'
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'DarkMaster_cropped.tif" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'DarkMaster_cropped.tif"'
+                f'DarkMaster_cropped.tif" "s3://some_bucket/some_prefix/'
+                f'derivatives/DarkMaster_cropped.tif"'
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'FinalReport.txt" '
-                f'"s3://some_bucket/some_prefix/derivatives/FinalReport.txt"'
+                f'FinalReport.txt" "s3://some_bucket/some_prefix/'
+                f'derivatives/FinalReport.txt"'
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'Flat_488_Ch0_0.tif" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'Flat_488_Ch0_0.tif"'
+                f'Flat_488_Ch0_0.tif" "s3://some_bucket/some_prefix/'
+                f'derivatives/Flat_488_Ch0_0.tif"'
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'Flat_488_Ch0_1.tif" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'Flat_488_Ch0_1.tif"'
+                f'Flat_488_Ch0_1.tif" "s3://some_bucket/some_prefix/'
+                f'derivatives/Flat_488_Ch0_1.tif"'
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'Flat_561_Ch1_0.tif" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'Flat_561_Ch1_0.tif"'
+                f'Flat_561_Ch1_0.tif" "s3://some_bucket/some_prefix/'
+                f'derivatives/Flat_561_Ch1_0.tif"'
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'Flat_561_Ch1_1.tif" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'Flat_561_Ch1_1.tif"'
+                f'Flat_561_Ch1_1.tif" "s3://some_bucket/some_prefix/'
+                f'derivatives/Flat_561_Ch1_1.tif"'
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'Flat_639_Ch2_0.tif" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'Flat_639_Ch2_0.tif"'
+                f'Flat_639_Ch2_0.tif" "s3://some_bucket/some_prefix/'
+                f'derivatives/Flat_639_Ch2_0.tif"'
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'Flat_639_Ch2_1.tif" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'Flat_639_Ch2_1.tif"'
+                f'Flat_639_Ch2_1.tif" "s3://some_bucket/some_prefix/'
+                f'derivatives/Flat_639_Ch2_1.tif"'
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'TileSettings.ini" '
-                f'"s3://some_bucket/some_prefix/derivatives/TileSettings.ini"'
+                f'TileSettings.ini" "s3://some_bucket/some_prefix/'
+                f'derivatives/TileSettings.ini"'
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/metadata.json" '
@@ -127,108 +119,113 @@ class TestCheckDirectoriesJob(unittest.TestCase):
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'processing_manifest.json" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'processing_manifest.json"'
+                f'processing_manifest.json" "s3://some_bucket/some_prefix/'
+                f'derivatives/processing_manifest.json"'
             ),
             (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_488_Em_525/*" '
-                f'"s3://some_bucket/some_prefix/SmartSPIM/Ex_488_Em_525/"'
+                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/'
+                f'Ex_488_Em_525/471320/*" "s3://some_bucket/some_prefix/'
+                f'SmartSPIM/Ex_488_Em_525/471320/"'
             ),
             (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_561_Em_600/*" '
-                f'"s3://some_bucket/some_prefix/SmartSPIM/Ex_561_Em_600/"'
+                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/'
+                f'Ex_488_Em_525/503720/*" "s3://some_bucket/some_prefix/'
+                f'SmartSPIM/Ex_488_Em_525/503720/"'
             ),
             (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_639_Em_680/*" '
-                f'"s3://some_bucket/some_prefix/SmartSPIM/Ex_639_Em_680/"'
+                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/'
+                f'Ex_488_Em_525/536120/*" "s3://some_bucket/some_prefix/'
+                f'SmartSPIM/Ex_488_Em_525/536120/"'
             ),
             (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/nohup.out" '
-                f'"s3://some_bucket/some_prefix/SmartSPIM/nohup.out"'
+                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_488_Em_525/'
+                f'568520/*" "s3://some_bucket/some_prefix/SmartSPIM/'
+                f'Ex_488_Em_525/568520/"'
             ),
             (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'ASI_logging.txt" '
-                f'"s3://some_bucket/some_prefix/derivatives/ASI_logging.txt"'
+                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_488_Em_525/'
+                f'some_file_here.txt" "s3://some_bucket/some_prefix/SmartSPIM/'
+                f'Ex_488_Em_525/some_file_here.txt"'
             ),
             (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'DarkMaster_cropped.tif" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'DarkMaster_cropped.tif"'
+                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_561_Em_600/'
+                f'471320/*" "s3://some_bucket/some_prefix/SmartSPIM/'
+                f'Ex_561_Em_600/471320/"'
             ),
             (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'Ex_488_Em_525_MIP/*" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'Ex_488_Em_525_MIP/"'
+                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_561_Em_600/'
+                f'503720/*" "s3://some_bucket/some_prefix/SmartSPIM/'
+                f'Ex_561_Em_600/503720/"'
             ),
             (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'Ex_561_Em_600_MIP/*" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'Ex_561_Em_600_MIP/"'
+                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_561_Em_600/'
+                f'536120/*" "s3://some_bucket/some_prefix/SmartSPIM/'
+                f'Ex_561_Em_600/536120/"'
             ),
             (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'FinalReport.txt" '
-                f'"s3://some_bucket/some_prefix/derivatives/FinalReport.txt"'
+                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_561_Em_600/'
+                f'568520/*" "s3://some_bucket/some_prefix/SmartSPIM/'
+                f'Ex_561_Em_600/568520/"'
             ),
             (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'Flat_488_Ch0_0.tif" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'Flat_488_Ch0_0.tif"'
+                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_639_Em_680/'
+                f'471320/*" "s3://some_bucket/some_prefix/SmartSPIM/'
+                f'Ex_639_Em_680/471320/"'
             ),
             (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'Flat_488_Ch0_1.tif" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'Flat_488_Ch0_1.tif"'
+                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_639_Em_680/'
+                f'503720/*" "s3://some_bucket/some_prefix/SmartSPIM/'
+                f'Ex_639_Em_680/503720/"'
             ),
             (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'Flat_561_Ch1_0.tif" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'Flat_561_Ch1_0.tif"'
+                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_639_Em_680/'
+                f'536120/*" "s3://some_bucket/some_prefix/SmartSPIM/'
+                f'Ex_639_Em_680/536120/"'
             ),
             (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'Flat_561_Ch1_1.tif" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'Flat_561_Ch1_1.tif"'
+                f'cp "{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_639_Em_680/'
+                f'568520/*" "s3://some_bucket/some_prefix/SmartSPIM/'
+                f'Ex_639_Em_680/568520/"'
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'Flat_639_Ch2_0.tif" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'Flat_639_Ch2_0.tif"'
+                f'Ex_488_Em_525_MIP/471320/*" "s3://some_bucket/some_prefix/'
+                f'derivatives/Ex_488_Em_525_MIP/471320/"'
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'Flat_639_Ch2_1.tif" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'Flat_639_Ch2_1.tif"'
+                f'Ex_488_Em_525_MIP/503720/*" "s3://some_bucket/some_prefix/'
+                f'derivatives/Ex_488_Em_525_MIP/503720/"'
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'TileSettings.ini" '
-                f'"s3://some_bucket/some_prefix/derivatives/TileSettings.ini"'
-            ),
-            (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/metadata.json" '
-                f'"s3://some_bucket/some_prefix/derivatives/metadata.json"'
-            ),
-            (
-                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/metadata.txt" '
-                f'"s3://some_bucket/some_prefix/derivatives/metadata.txt"'
+                f'Ex_488_Em_525_MIP/536120/*" "s3://some_bucket/some_prefix/'
+                f'derivatives/Ex_488_Em_525_MIP/536120/"'
             ),
             (
                 f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
-                f'processing_manifest.json" '
-                f'"s3://some_bucket/some_prefix/derivatives/'
-                f'processing_manifest.json"'
+                f'Ex_488_Em_525_MIP/568520/*" "s3://some_bucket/some_prefix/'
+                f'derivatives/Ex_488_Em_525_MIP/568520/"'
+            ),
+            (
+                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
+                f'Ex_561_Em_600_MIP/471320/*" "s3://some_bucket/some_prefix/'
+                f'derivatives/Ex_561_Em_600_MIP/471320/"'
+            ),
+            (
+                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
+                f'Ex_561_Em_600_MIP/503720/*" "s3://some_bucket/some_prefix/'
+                f'derivatives/Ex_561_Em_600_MIP/503720/"'
+            ),
+            (
+                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
+                f'Ex_561_Em_600_MIP/536120/*" "s3://some_bucket/some_prefix/'
+                f'derivatives/Ex_561_Em_600_MIP/536120/"'
+            ),
+            (
+                f'cp "{SMART_SPIM_DIR.as_posix()}/derivatives/'
+                f'Ex_561_Em_600_MIP/568520/*" "s3://some_bucket/some_prefix/'
+                f'derivatives/Ex_561_Em_600_MIP/568520/"'
             ),
         ]
 
@@ -335,7 +332,7 @@ class TestCheckDirectoriesJob(unittest.TestCase):
         """Tests _save_s5_commands_to_file"""
 
         self.example_job._save_s5_commands_to_file(self.expected_commands)
-        self.assertEqual(37, len(mock_write.mock_calls))
+        self.assertEqual(39, len(mock_write.mock_calls))
 
     @patch("logging.debug")
     @patch("builtins.open", new_callable=mock_open())
@@ -343,7 +340,7 @@ class TestCheckDirectoriesJob(unittest.TestCase):
         """Tests run_job"""
 
         self.example_job.run_job()
-        self.assertEqual(37, len(mock_write.mock_calls))
+        self.assertEqual(39, len(mock_write.mock_calls))
         mock_log_debug.assert_called()
 
 
