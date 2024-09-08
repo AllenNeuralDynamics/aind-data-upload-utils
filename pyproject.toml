@@ -18,7 +18,7 @@ dynamic = ["version"]
 
 dependencies = [
     'dask',
-    'aind-data-transfer-models==0.6.1'
+    'aind-data-transfer-models==0.8.2'
 ]
 
 [project.optional-dependencies]
