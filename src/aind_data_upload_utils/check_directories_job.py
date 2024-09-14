@@ -12,13 +12,13 @@ from copy import deepcopy
 from glob import glob
 from pathlib import Path
 from time import time
-from typing import List, Union
+from typing import List, Optional, Union
 
 from aind_data_schema_models.modalities import Modality
 from aind_data_schema_models.platforms import Platform
-from aind_data_transfer_models.core import BasicUploadJobConfigs
+from aind_data_transfer_models.core import ModalityConfigs
 from dask import bag as dask_bag
-from pydantic import Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings
 
 # Set log level from env var
@@ -26,44 +26,48 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
 logging.basicConfig(level=LOG_LEVEL)
 
 
-class JobSettings(BaseSettings):
-    """Job settings for CheckDirectoriesJob"""
+class DirectoriesToCheckConfigs(BaseModel):
+    """Basic model needed from BasicUploadConfigs"""
 
-    upload_configs: BasicUploadJobConfigs
-    n_partitions: int = Field(default=20)
-    num_of_smart_spim_levels: int = Field(default=3)
+    platform: Platform.ONE_OF
+    modalities: List[ModalityConfigs] = []
+    metadata_dir: Optional[Path] = None
 
-    @field_validator("upload_configs", mode="before")
+    @field_validator("modalities", mode="before")
     def parse_json_str(
-        cls, upload_conf: Union[BasicUploadJobConfigs, dict]
-    ) -> BasicUploadJobConfigs:
+        cls, mod_configs: Union[List[ModalityConfigs], List[dict]]
+    ) -> List[ModalityConfigs]:
         """
         Method to ignore computed fields in serialized model, which might
         raise validation errors.
         Parameters
         ----------
-        upload_conf : Union[BasicUploadJobConfigs, dict]
+        mod_configs : Union[List[ModalityConfigs], List[dict]]
 
         Returns
         -------
-        BasicUploadJobConfigs
+        List[ModalityConfigs]
         """
-        # TODO: This should be moved to the BasicUploadJobConfigs class itself
-        if isinstance(upload_conf, dict):
-            json_obj = deepcopy(upload_conf)
-            # Remove s3_prefix computed field
-            if json_obj.get("s3_prefix") is not None:
-                del json_obj["s3_prefix"]
-            # Remove output_folder_name from modalities
-            if json_obj.get("modalities") is not None:
-                for modality in json_obj["modalities"]:
-                    if "output_folder_name" in modality:
-                        del modality["output_folder_name"]
-            return BasicUploadJobConfigs.model_validate_json(
-                json.dumps(json_obj)
-            )
-        else:
-            return upload_conf
+        parsed_configs = []
+        for mod_conf in mod_configs:
+            if isinstance(mod_conf, dict):
+                json_obj = deepcopy(mod_conf)
+                if "output_folder_name" in json_obj:
+                    del json_obj["output_folder_name"]
+                parsed_configs.append(
+                    ModalityConfigs.model_validate_json(json.dumps(json_obj))
+                )
+            else:
+                parsed_configs.append(mod_conf)
+        return parsed_configs
+
+
+class JobSettings(BaseSettings, extra="allow"):
+    """Job settings for CheckDirectoriesJob"""
+
+    directories_to_check_configs: DirectoriesToCheckConfigs
+    n_partitions: int = Field(default=20)
+    num_of_smart_spim_levels: int = Field(default=3)
 
 
 class CheckDirectoriesJob:
@@ -113,16 +117,18 @@ class CheckDirectoriesJob:
         List[Union[Path, str]]
 
         """
-        upload_configs = self.job_settings.upload_configs
+        dirs_to_check_configs = self.job_settings.directories_to_check_configs
         directories_to_check = []
-        platform = upload_configs.platform
+        platform = dirs_to_check_configs.platform
         # First, check all the json files in the metadata dir
-        if upload_configs.metadata_dir is not None:
-            metadata_dir_path = str(upload_configs.metadata_dir).rstrip("/")
+        if dirs_to_check_configs.metadata_dir is not None:
+            metadata_dir_path = str(dirs_to_check_configs.metadata_dir).rstrip(
+                "/"
+            )
             for json_file in glob(f"{metadata_dir_path}/*.json"):
                 self._check_path(Path(json_file).as_posix())
         # Next add modality directories
-        for modality_config in upload_configs.modalities:
+        for modality_config in dirs_to_check_configs.modalities:
             modality = modality_config.modality
             source_dir = modality_config.source
             # We'll handle SmartSPIM differently and partition 3 levels deep
