@@ -16,10 +16,7 @@ from typing import List, Optional, Union
 
 from aind_data_schema_models.modalities import Modality
 from aind_data_schema_models.platforms import Platform
-from aind_data_transfer_models.core import (
-    BasicUploadJobConfigs,
-    ModalityConfigs,
-)
+from aind_data_transfer_models.core import ModalityConfigs
 from dask import bag as dask_bag
 from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings
@@ -39,7 +36,7 @@ class DirectoriesToCheckConfigs(BaseModel):
     @field_validator("modalities", mode="before")
     def parse_json_str(
         cls, mod_configs: Union[List[ModalityConfigs], List[dict]]
-    ) -> BasicUploadJobConfigs:
+    ) -> List[ModalityConfigs]:
         """
         Method to ignore computed fields in serialized model, which might
         raise validation errors.
