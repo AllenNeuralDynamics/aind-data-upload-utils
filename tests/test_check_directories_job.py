@@ -7,13 +7,11 @@ from unittest.mock import MagicMock, call, patch
 
 from aind_data_schema_models.modalities import Modality
 from aind_data_schema_models.platforms import Platform
-from aind_data_transfer_models.core import (
-    BasicUploadJobConfigs,
-    ModalityConfigs,
-)
+from aind_data_transfer_models.core import ModalityConfigs
 
 from aind_data_upload_utils.check_directories_job import (
     CheckDirectoriesJob,
+    DirectoriesToCheckConfigs,
     JobSettings,
 )
 
@@ -33,8 +31,7 @@ class TestJobSettings(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         """Sets up class with example upload configs"""
-        example_upload_configs = BasicUploadJobConfigs(
-            project_name="SmartSPIM",
+        example_upload_configs = DirectoriesToCheckConfigs(
             platform=Platform.SMARTSPIM,
             modalities=[
                 ModalityConfigs(
@@ -52,8 +49,6 @@ class TestJobSettings(unittest.TestCase):
                     modality=Modality.SPIM,
                 ),
             ],
-            subject_id="12345",
-            acq_datetime="2020-10-10T01:01:01",
             metadata_dir=(RESOURCES_DIR / "metadata_dir").as_posix(),
         )
         cls.example_upload_configs = example_upload_configs
@@ -61,7 +56,7 @@ class TestJobSettings(unittest.TestCase):
     def test_class_constructor(self):
         """Tests that job settings can be constructed from serialized json."""
         upload_configs = self.example_upload_configs
-        job_settings = JobSettings(upload_configs=upload_configs)
+        job_settings = JobSettings(directories_to_check_configs=upload_configs)
         deserialized_settings = job_settings.model_validate_json(
             job_settings.model_dump_json()
         )
@@ -74,8 +69,7 @@ class TestCheckDirectoriesJob(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         """Sets up class with example settings"""
-        example_upload_configs = BasicUploadJobConfigs(
-            project_name="SmartSPIM",
+        example_upload_configs = DirectoriesToCheckConfigs(
             platform=Platform.SMARTSPIM,
             modalities=[
                 ModalityConfigs(
@@ -93,13 +87,11 @@ class TestCheckDirectoriesJob(unittest.TestCase):
                     modality=Modality.SPIM,
                 ),
             ],
-            subject_id="12345",
-            acq_datetime="2020-10-10T01:01:01",
             metadata_dir=(RESOURCES_DIR / "metadata_dir").as_posix(),
         )
         cls.example_job = CheckDirectoriesJob(
             job_settings=JobSettings(
-                upload_configs=example_upload_configs,
+                directories_to_check_configs=example_upload_configs,
                 num_of_smart_spim_levels=2,
             )
         )
