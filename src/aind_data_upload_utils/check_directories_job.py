@@ -135,6 +135,7 @@ class CheckDirectoriesJob:
             if modality == Modality.SPIM and platform == Platform.SMARTSPIM:
                 # Check top level files
                 base_path = str(source_dir).rstrip("/")
+                self._check_path(Path(base_path).as_posix())
                 for _ in range(0, self.job_settings.num_of_smart_spim_levels):
                     base_path = base_path + "/*"
                     for smart_spim_path in glob(base_path):
