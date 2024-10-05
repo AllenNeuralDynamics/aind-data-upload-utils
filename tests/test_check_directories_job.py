@@ -335,6 +335,29 @@ class TestCheckDirectoriesJob(unittest.TestCase):
         mock_check_path.assert_has_calls(expected_calls, any_order=True)
         mock_log_debug.assert_called()
 
+    @patch("logging.debug")
+    def test_dask_task_to_process_directory_list_error(
+        self, mock_log_debug: MagicMock
+    ):
+        """Tests dask_task_to_process_directory_list raises error"""
+
+        list_of_directories = [
+            (RESOURCES_DIR / "example_ephys_data_set").as_posix(),
+            (RESOURCES_DIR / "no_such_directory_in_tests").as_posix(),
+            (
+                SMART_SPIM_DIR / "SmartSPIM" / "Ex_488_Em_525" / "471320"
+            ).as_posix(),
+        ]
+        with self.assertRaises(FileNotFoundError) as e:
+            self.example_job._dask_task_to_process_directory_list(
+                directories=list_of_directories
+            )
+        self.assertIn(
+            "is neither a directory, file, nor valid symlink",
+            e.exception.args[0],
+        )
+        self.assertEqual(3, mock_log_debug.call_count)
+
     @patch("dask.bag.map_partitions")
     def test_check_for_broken_sym_links(self, mock_map_partitions: MagicMock):
         """Tests _check_for_broken_sym_links"""

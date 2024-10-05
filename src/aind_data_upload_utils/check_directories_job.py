@@ -173,6 +173,8 @@ class CheckDirectoriesJob:
             logging.debug(
                 f"Checking {directory}. On {dir_counter} of {total_to_scan}"
             )
+            # Scan top level directory first
+            self._check_path(directory)
             for path, _, files in os.walk(directory):
                 for name in files:
                     # Expecting posix paths
