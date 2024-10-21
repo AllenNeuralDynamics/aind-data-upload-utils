@@ -4,11 +4,9 @@ Uses Dask to parallelize checking of directories.
 """
 
 import argparse
-import json
 import logging
 import os
 import sys
-from copy import deepcopy
 from glob import glob
 from pathlib import Path
 from time import time
@@ -16,14 +14,21 @@ from typing import List, Optional, Union
 
 from aind_data_schema_models.modalities import Modality
 from aind_data_schema_models.platforms import Platform
-from aind_data_transfer_models.core import ModalityConfigs
 from dask import bag as dask_bag
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
 
 # Set log level from env var
 LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
 logging.basicConfig(level=LOG_LEVEL)
+
+
+class ModalityConfigs(BaseModel):
+    """Modality type and source directories"""
+
+    modality: Modality.ONE_OF
+    extra_configs: Optional[str] = Field(default=None)
+    source: str
 
 
 class DirectoriesToCheckConfigs(BaseModel):
@@ -32,34 +37,6 @@ class DirectoriesToCheckConfigs(BaseModel):
     platform: Platform.ONE_OF
     modalities: List[ModalityConfigs] = []
     metadata_dir: Optional[Path] = None
-
-    @field_validator("modalities", mode="before")
-    def parse_json_str(
-        cls, mod_configs: Union[List[ModalityConfigs], List[dict]]
-    ) -> List[ModalityConfigs]:
-        """
-        Method to ignore computed fields in serialized model, which might
-        raise validation errors.
-        Parameters
-        ----------
-        mod_configs : Union[List[ModalityConfigs], List[dict]]
-
-        Returns
-        -------
-        List[ModalityConfigs]
-        """
-        parsed_configs = []
-        for mod_conf in mod_configs:
-            if isinstance(mod_conf, dict):
-                json_obj = deepcopy(mod_conf)
-                if "output_folder_name" in json_obj:
-                    del json_obj["output_folder_name"]
-                parsed_configs.append(
-                    ModalityConfigs.model_validate_json(json.dumps(json_obj))
-                )
-            else:
-                parsed_configs.append(mod_conf)
-        return parsed_configs
 
 
 class JobSettings(BaseSettings, extra="allow"):
@@ -131,6 +108,9 @@ class CheckDirectoriesJob:
         for modality_config in dirs_to_check_configs.modalities:
             modality = modality_config.modality
             source_dir = modality_config.source
+            extra_configs = modality_config.extra_configs
+            if extra_configs is not None:
+                self._check_path(extra_configs)
             # We'll handle SmartSPIM differently and partition 3 levels deep
             if modality == Modality.SPIM and platform == Platform.SMARTSPIM:
                 # Check top level files
@@ -150,7 +130,7 @@ class CheckDirectoriesJob:
                     else:
                         self._check_path(Path(smart_spim_path).as_posix())
             else:
-                directories_to_check.append(source_dir.as_posix())
+                directories_to_check.append(Path(source_dir).as_posix())
         return directories_to_check
 
     def _dask_task_to_process_directory_list(

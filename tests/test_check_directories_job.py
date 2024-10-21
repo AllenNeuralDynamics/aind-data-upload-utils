@@ -7,12 +7,12 @@ from unittest.mock import MagicMock, call, patch
 
 from aind_data_schema_models.modalities import Modality
 from aind_data_schema_models.platforms import Platform
-from aind_data_transfer_models.core import ModalityConfigs
 
 from aind_data_upload_utils.check_directories_job import (
     CheckDirectoriesJob,
     DirectoriesToCheckConfigs,
     JobSettings,
+    ModalityConfigs,
 )
 
 RESOURCES_DIR = Path(os.path.dirname(os.path.realpath(__file__))) / "resources"
@@ -285,6 +285,34 @@ class TestCheckDirectoriesJob(unittest.TestCase):
         self.assertCountEqual(
             self.expected_list_of_directories_to_check, list_of_directories
         )
+
+    @patch(
+        "aind_data_upload_utils.check_directories_job.CheckDirectoriesJob."
+        "_check_path"
+    )
+    def test_get_list_of_directories_to_check_with_extra_configs(
+        self, mock_check_path: MagicMock
+    ):
+        """Tests _get_list_of_directories_to_check with extra_configs"""
+        configs = DirectoriesToCheckConfigs(
+            platform=Platform.SMARTSPIM,
+            modalities=[
+                ModalityConfigs(
+                    source=(
+                        RESOURCES_DIR / "example_ephys_data_set"
+                    ).as_posix(),
+                    modality=Modality.ECEPHYS,
+                    extra_configs=(RESOURCES_DIR / "extra_conf").as_posix(),
+                ),
+            ],
+            metadata_dir=(RESOURCES_DIR / "metadata_dir").as_posix(),
+        )
+        example_job = CheckDirectoriesJob(
+            job_settings=JobSettings(directories_to_check_configs=configs)
+        )
+        list_of_directories = example_job._get_list_of_directories_to_check()
+        self.assertEqual(1, len(list_of_directories))
+        self.assertEqual(2, len(mock_check_path.mock_calls))
 
     @patch(
         "aind_data_upload_utils.check_directories_job.CheckDirectoriesJob."
