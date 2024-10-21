@@ -16,7 +16,6 @@ from typing import List, Optional, Union
 
 from aind_data_schema_models.modalities import Modality
 from aind_data_schema_models.platforms import Platform
-from aind_data_transfer_models.core import ModalityConfigs
 from dask import bag as dask_bag
 from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings
@@ -24,6 +23,12 @@ from pydantic_settings import BaseSettings
 # Set log level from env var
 LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
 logging.basicConfig(level=LOG_LEVEL)
+
+
+class ModalityConfigs(BaseModel):
+    modality: Modality.ONE_OF
+    extra_configs: Optional[str] = Field(default=None)
+    source: str
 
 
 class DirectoriesToCheckConfigs(BaseModel):
@@ -150,7 +155,7 @@ class CheckDirectoriesJob:
                     else:
                         self._check_path(Path(smart_spim_path).as_posix())
             else:
-                directories_to_check.append(source_dir.as_posix())
+                directories_to_check.append(Path(source_dir).as_posix())
         return directories_to_check
 
     def _dask_task_to_process_directory_list(

@@ -7,9 +7,9 @@ from unittest.mock import MagicMock, call, patch
 
 from aind_data_schema_models.modalities import Modality
 from aind_data_schema_models.platforms import Platform
-from aind_data_transfer_models.core import ModalityConfigs
 
 from aind_data_upload_utils.check_directories_job import (
+    ModalityConfigs,
     CheckDirectoriesJob,
     DirectoriesToCheckConfigs,
     JobSettings,
