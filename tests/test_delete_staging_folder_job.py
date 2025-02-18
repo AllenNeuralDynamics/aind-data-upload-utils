@@ -17,10 +17,7 @@ SMART_SPIM_DIR = (
     / "SmartSPIM_695464_2023-10-18_20-30-30"
 )
 
-EPHYS_DIR = (
-    RESOURCES_DIR
-    / "example_ephys_data_set"
-)
+EPHYS_DIR = RESOURCES_DIR / "example_ephys_data_set"
 
 
 class TestJobSettings(unittest.TestCase):
@@ -70,8 +67,7 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
             staging_directory=SMART_SPIM_DIR, num_of_dir_levels=1
         )
         job_settings_2 = JobSettings(
-            staging_directory=[SMART_SPIM_DIR, EPHYS_DIR],
-            num_of_dir_levels=1
+            staging_directory=[SMART_SPIM_DIR, EPHYS_DIR], num_of_dir_levels=1
         )
         cls.example_job = DeleteStagingFolderJob(job_settings=job_settings)
         cls.example_job_list = DeleteStagingFolderJob(
@@ -83,7 +79,9 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
     def test_get_list_of_sub_directories(self, mock_rm_tree: MagicMock):
         """Tests _get_list_of_sub_directories"""
         folder = self.example_job.job_settings.staging_directory
-        list_of_dirs = self.example_job._get_list_of_sub_directories(folder=folder)
+        list_of_dirs = self.example_job._get_list_of_sub_directories(
+            folder=folder
+        )
         expected_list = [
             f"{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_488_Em_525",
             f"{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_561_Em_600",

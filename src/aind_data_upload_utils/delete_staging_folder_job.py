@@ -174,9 +174,7 @@ class DeleteStagingFolderJob:
             list_of_sub_dirs = self._get_list_of_sub_directories(folder=folder)
             self._remove_subdirectories(list_of_sub_dirs)
             # Remove top-level staging folder
-            self._remove_directory(
-                folder.as_posix().rstrip("/")
-            )
+            self._remove_directory(folder.as_posix().rstrip("/"))
         job_end_time = time()
         execution_time = job_end_time - job_start_time
         logging.debug(f"Task took {execution_time} seconds")
