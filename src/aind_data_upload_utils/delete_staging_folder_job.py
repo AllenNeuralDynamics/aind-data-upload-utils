@@ -44,7 +44,8 @@ class JobSettings(BaseSettings):
     # pattern is also hard-coded for extra security. We don't want
     # requests to remove anything outside this directory.
     pattern_to_match: ClassVar[Pattern] = re.compile(
-        r"^/allen/aind/stage/svc_aind_airflow/(?:prod|dev)/.*"
+        r"(?:^/allen/aind/stage/svc_aind_airflow/(?:prod|dev)/.+)|"
+        r"(?:^/allen/aind/scratch/.+/.+)"
     )
 
 
