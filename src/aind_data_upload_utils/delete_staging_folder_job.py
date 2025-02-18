@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 from re import Pattern
 from time import time
-from typing import ClassVar, List, Union
+from typing import ClassVar, List
 
 from dask import bag as dask_bag
 from pydantic import Field
@@ -25,9 +25,7 @@ logging.basicConfig(level=LOG_LEVEL)
 class JobSettings(BaseSettings):
     """Job settings for DeleteStagingFolderJob"""
 
-    staging_directory: Union[Path, List[Path]] = Field(
-        ..., description="Folder(s) to delete."
-    )
+    staging_directory: Path = Field(..., description="Folder(s) to delete.")
     num_of_dir_levels: int = Field(
         default=4,
         description="Number of subdirectory levels to remove",
@@ -44,8 +42,7 @@ class JobSettings(BaseSettings):
     # pattern is also hard-coded for extra security. We don't want
     # requests to remove anything outside this directory.
     pattern_to_match: ClassVar[Pattern] = re.compile(
-        r"(?:^/allen/aind/stage/svc_aind_airflow/(?:prod|dev)/.+)|"
-        r"(?:^/allen/aind/scratch/.+/.+)"
+        r"^/allen/aind/stage/svc_aind_airflow/(?:prod|dev)/.+"
     )
 
 
@@ -165,16 +162,12 @@ class DeleteStagingFolderJob:
         """Main job runner. Walks num_of_dir_levels deep and removes all
         subdirectories in that level. Then removes top directory."""
         job_start_time = time()
-        if isinstance(self.job_settings.staging_directory, list):
-            folders_to_remove = self.job_settings.staging_directory
-        else:
-            folders_to_remove = [self.job_settings.staging_directory]
-        for folder in folders_to_remove:
-            # Remove batches of subdirectories in parallel
-            list_of_sub_dirs = self._get_list_of_sub_directories(folder=folder)
-            self._remove_subdirectories(list_of_sub_dirs)
-            # Remove top-level staging folder
-            self._remove_directory(folder.as_posix().rstrip("/"))
+        # Remove batches of subdirectories in parallel
+        folder = self.job_settings.staging_directory
+        list_of_sub_dirs = self._get_list_of_sub_directories(folder=folder)
+        self._remove_subdirectories(list_of_sub_dirs)
+        # Remove top-level staging folder
+        self._remove_directory(folder.as_posix().rstrip("/"))
         job_end_time = time()
         execution_time = job_end_time - job_start_time
         logging.debug(f"Task took {execution_time} seconds")

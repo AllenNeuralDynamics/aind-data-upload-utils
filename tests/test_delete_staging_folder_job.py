@@ -17,8 +17,6 @@ SMART_SPIM_DIR = (
     / "SmartSPIM_695464_2023-10-18_20-30-30"
 )
 
-EPHYS_DIR = RESOURCES_DIR / "example_ephys_data_set"
-
 
 class TestJobSettings(unittest.TestCase):
     """
@@ -40,21 +38,15 @@ class TestJobSettings(unittest.TestCase):
 
         good_match_1 = "/allen/aind/stage/svc_aind_airflow/prod/abc_123"
         good_match_2 = "/allen/aind/stage/svc_aind_airflow/dev/abc 123/def456"
-        good_match_3 = (
-            "/allen/aind/scratch/dynamic_foraging_rig_transfer/behavior"
-        )
         bad_match_1 = "/ allen/aind/stage/svc_aind_airflow/prod/"
         bad_match_2 = "/"
         bad_match_3 = "/something/else/here"
-        bad_match_4 = "/allen/aind/scratch/dynamic_foraging_rig_transfer/"
 
         self.assertRegex(good_match_1, job_settings.pattern_to_match)
         self.assertRegex(good_match_2, job_settings.pattern_to_match)
-        self.assertRegex(good_match_3, job_settings.pattern_to_match)
         self.assertNotRegex(bad_match_1, job_settings.pattern_to_match)
         self.assertNotRegex(bad_match_2, job_settings.pattern_to_match)
         self.assertNotRegex(bad_match_3, job_settings.pattern_to_match)
-        self.assertNotRegex(bad_match_4, job_settings.pattern_to_match)
 
 
 class TestDeleteStagingFolderJob(unittest.TestCase):
@@ -66,13 +58,7 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         job_settings = JobSettings(
             staging_directory=SMART_SPIM_DIR, num_of_dir_levels=1
         )
-        job_settings_2 = JobSettings(
-            staging_directory=[SMART_SPIM_DIR, EPHYS_DIR], num_of_dir_levels=1
-        )
         cls.example_job = DeleteStagingFolderJob(job_settings=job_settings)
-        cls.example_job_list = DeleteStagingFolderJob(
-            job_settings=job_settings_2
-        )
 
     # Patch shutil.rmtree in every unit test
     @patch("shutil.rmtree")
@@ -254,36 +240,6 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         mock_remove_subdirectories.return_value = None
         mock_remove_directory.return_value = None
         self.example_job.run_job()
-        mock_remove_subdirectories.assert_called()
-        mock_remove_directory.assert_called()
-        # _remove_directory is mocked, so rmtree shouldn't be called
-        mock_rm_tree.assert_not_called()
-        mock_log_debug.assert_called()
-
-    @patch("shutil.rmtree")
-    @patch(
-        "aind_data_upload_utils.delete_staging_folder_job."
-        "DeleteStagingFolderJob._remove_subdirectories"
-    )
-    @patch(
-        "aind_data_upload_utils.delete_staging_folder_job."
-        "DeleteStagingFolderJob._remove_directory"
-    )
-    @patch("logging.debug")
-    def test_run_job_list(
-        self,
-        mock_log_debug: MagicMock,
-        mock_remove_directory: MagicMock,
-        mock_remove_subdirectories: MagicMock,
-        mock_rm_tree: MagicMock,
-    ):
-        """Tests run_job method"""
-        mock_remove_subdirectories.return_value = None
-        mock_remove_directory.return_value = None
-        self.example_job_list.run_job()
-        mock_remove_directory.assert_has_calls(
-            [call(SMART_SPIM_DIR.as_posix()), call(EPHYS_DIR.as_posix())]
-        )
         mock_remove_subdirectories.assert_called()
         mock_remove_directory.assert_called()
         # _remove_directory is mocked, so rmtree shouldn't be called
