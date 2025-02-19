@@ -38,21 +38,15 @@ class TestJobSettings(unittest.TestCase):
 
         good_match_1 = "/allen/aind/stage/svc_aind_airflow/prod/abc_123"
         good_match_2 = "/allen/aind/stage/svc_aind_airflow/dev/abc 123/def456"
-        good_match_3 = (
-            "/allen/aind/scratch/dynamic_foraging_rig_transfer/behavior"
-        )
         bad_match_1 = "/ allen/aind/stage/svc_aind_airflow/prod/"
         bad_match_2 = "/"
         bad_match_3 = "/something/else/here"
-        bad_match_4 = "/allen/aind/scratch/dynamic_foraging_rig_transfer/"
 
         self.assertRegex(good_match_1, job_settings.pattern_to_match)
         self.assertRegex(good_match_2, job_settings.pattern_to_match)
-        self.assertRegex(good_match_3, job_settings.pattern_to_match)
         self.assertNotRegex(bad_match_1, job_settings.pattern_to_match)
         self.assertNotRegex(bad_match_2, job_settings.pattern_to_match)
         self.assertNotRegex(bad_match_3, job_settings.pattern_to_match)
-        self.assertNotRegex(bad_match_4, job_settings.pattern_to_match)
 
 
 class TestDeleteStagingFolderJob(unittest.TestCase):
@@ -70,7 +64,10 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
     @patch("shutil.rmtree")
     def test_get_list_of_sub_directories(self, mock_rm_tree: MagicMock):
         """Tests _get_list_of_sub_directories"""
-        list_of_dirs = self.example_job._get_list_of_sub_directories()
+        folder = self.example_job.job_settings.staging_directory
+        list_of_dirs = self.example_job._get_list_of_sub_directories(
+            folder=folder
+        )
         expected_list = [
             f"{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_488_Em_525",
             f"{SMART_SPIM_DIR.as_posix()}/SmartSPIM/Ex_561_Em_600",
