@@ -5,14 +5,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, call, patch
 
-from aind_data_schema_models.modalities import Modality
-from aind_data_schema_models.platforms import Platform
-
 from aind_data_upload_utils.check_directories_job import (
     CheckDirectoriesJob,
     DirectoriesToCheckConfigs,
     JobSettings,
-    ModalityConfigs,
 )
 
 RESOURCES_DIR = Path(os.path.dirname(os.path.realpath(__file__))) / "resources"
@@ -32,24 +28,15 @@ class TestJobSettings(unittest.TestCase):
     def setUpClass(cls) -> None:
         """Sets up class with example upload configs"""
         example_upload_configs = DirectoriesToCheckConfigs(
-            platform=Platform.SMARTSPIM,
-            modalities=[
-                ModalityConfigs(
-                    source=(
-                        RESOURCES_DIR / "example_ephys_data_set"
-                    ).as_posix(),
-                    modality=Modality.ECEPHYS,
+            modality_sources={
+                "ecephys": str(RESOURCES_DIR / "example_ephys_data_set"),
+                "spim": str(
+                    RESOURCES_DIR
+                    / "example_smartspim_data_set"
+                    / "SmartSPIM_695464_2023-10-18_20-30-30"
                 ),
-                ModalityConfigs(
-                    source=(
-                        RESOURCES_DIR
-                        / "example_smartspim_data_set"
-                        / "SmartSPIM_695464_2023-10-18_20-30-30"
-                    ).as_posix(),
-                    modality=Modality.SPIM,
-                ),
-            ],
-            metadata_dir=(RESOURCES_DIR / "metadata_dir").as_posix(),
+            },
+            metadata_dir=str(RESOURCES_DIR / "metadata_dir"),
         )
         cls.example_upload_configs = example_upload_configs
 
@@ -70,29 +57,20 @@ class TestCheckDirectoriesJob(unittest.TestCase):
     def setUpClass(cls) -> None:
         """Sets up class with example settings"""
         example_upload_configs = DirectoriesToCheckConfigs(
-            platform=Platform.SMARTSPIM,
-            modalities=[
-                ModalityConfigs(
-                    source=(
-                        RESOURCES_DIR / "example_ephys_data_set"
-                    ).as_posix(),
-                    modality=Modality.ECEPHYS,
+            modality_sources={
+                "ecephys": str(RESOURCES_DIR / "example_ephys_data_set"),
+                "spim": str(
+                    RESOURCES_DIR
+                    / "example_smartspim_data_set"
+                    / "SmartSPIM_695464_2023-10-18_20-30-30"
                 ),
-                ModalityConfigs(
-                    source=(
-                        RESOURCES_DIR
-                        / "example_smartspim_data_set"
-                        / "SmartSPIM_695464_2023-10-18_20-30-30"
-                    ).as_posix(),
-                    modality=Modality.SPIM,
-                ),
-            ],
-            metadata_dir=(RESOURCES_DIR / "metadata_dir").as_posix(),
+            },
+            metadata_dir=str(RESOURCES_DIR / "metadata_dir"),
         )
         cls.example_job = CheckDirectoriesJob(
             job_settings=JobSettings(
                 directories_to_check_configs=example_upload_configs,
-                num_of_smart_spim_levels=2,
+                num_of_spim_levels=2,
             )
         )
         cls.expected_list_of_directories_to_check = [
@@ -285,34 +263,6 @@ class TestCheckDirectoriesJob(unittest.TestCase):
         self.assertCountEqual(
             self.expected_list_of_directories_to_check, list_of_directories
         )
-
-    @patch(
-        "aind_data_upload_utils.check_directories_job.CheckDirectoriesJob."
-        "_check_path"
-    )
-    def test_get_list_of_directories_to_check_with_extra_configs(
-        self, mock_check_path: MagicMock
-    ):
-        """Tests _get_list_of_directories_to_check with extra_configs"""
-        configs = DirectoriesToCheckConfigs(
-            platform=Platform.SMARTSPIM,
-            modalities=[
-                ModalityConfigs(
-                    source=(
-                        RESOURCES_DIR / "example_ephys_data_set"
-                    ).as_posix(),
-                    modality=Modality.ECEPHYS,
-                    extra_configs=(RESOURCES_DIR / "extra_conf").as_posix(),
-                ),
-            ],
-            metadata_dir=(RESOURCES_DIR / "metadata_dir").as_posix(),
-        )
-        example_job = CheckDirectoriesJob(
-            job_settings=JobSettings(directories_to_check_configs=configs)
-        )
-        list_of_directories = example_job._get_list_of_directories_to_check()
-        self.assertEqual(1, len(list_of_directories))
-        self.assertEqual(2, len(mock_check_path.mock_calls))
 
     @patch(
         "aind_data_upload_utils.check_directories_job.CheckDirectoriesJob."
