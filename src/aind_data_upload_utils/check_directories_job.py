@@ -10,10 +10,8 @@ import sys
 from glob import glob
 from pathlib import Path
 from time import time
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
-from aind_data_schema_models.modalities import Modality
-from aind_data_schema_models.platforms import Platform
 from dask import bag as dask_bag
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
@@ -23,20 +21,14 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
 logging.basicConfig(level=LOG_LEVEL)
 
 
-class ModalityConfigs(BaseModel):
-    """Modality type and source directories"""
-
-    modality: Modality.ONE_OF
-    extra_configs: Optional[str] = Field(default=None)
-    source: str
-
-
 class DirectoriesToCheckConfigs(BaseModel):
     """Basic model needed from BasicUploadConfigs"""
 
-    platform: Platform.ONE_OF
-    modalities: List[ModalityConfigs] = []
-    metadata_dir: Optional[Path] = None
+    modality_sources: Dict[str, str] = Field(
+        default=dict(),
+        description="Looks like {'ecephys':'folder', 'behavior': 'folder2'}",
+    )
+    metadata_dir: Optional[str] = Field(default=None)
 
 
 class JobSettings(BaseSettings, extra="allow"):
@@ -44,7 +36,7 @@ class JobSettings(BaseSettings, extra="allow"):
 
     directories_to_check_configs: DirectoriesToCheckConfigs
     n_partitions: int = Field(default=20)
-    num_of_smart_spim_levels: int = Field(default=3)
+    num_of_spim_levels: int = Field(default=3)
 
 
 class CheckDirectoriesJob:
@@ -96,7 +88,6 @@ class CheckDirectoriesJob:
         """
         dirs_to_check_configs = self.job_settings.directories_to_check_configs
         directories_to_check = []
-        platform = dirs_to_check_configs.platform
         # First, check all the json files in the metadata dir
         if dirs_to_check_configs.metadata_dir is not None:
             metadata_dir_path = str(dirs_to_check_configs.metadata_dir).rstrip(
@@ -105,18 +96,18 @@ class CheckDirectoriesJob:
             for json_file in glob(f"{metadata_dir_path}/*.json"):
                 self._check_path(Path(json_file).as_posix())
         # Next add modality directories
-        for modality_config in dirs_to_check_configs.modalities:
-            modality = modality_config.modality
-            source_dir = modality_config.source
-            extra_configs = modality_config.extra_configs
-            if extra_configs is not None:
-                self._check_path(extra_configs)
+        for (
+            modality_abbr,
+            modality_source,
+        ) in dirs_to_check_configs.modality_sources.items():
+            modality = modality_abbr
+            source_dir = modality_source
             # We'll handle SmartSPIM differently and partition 3 levels deep
-            if modality == Modality.SPIM and platform == Platform.SMARTSPIM:
+            if "spim" in modality.lower():
                 # Check top level files
                 base_path = str(source_dir).rstrip("/")
                 self._check_path(Path(base_path).as_posix())
-                for _ in range(0, self.job_settings.num_of_smart_spim_levels):
+                for _ in range(0, self.job_settings.num_of_spim_levels):
                     base_path = base_path + "/*"
                     for smart_spim_path in glob(base_path):
                         self._check_path(Path(smart_spim_path).as_posix())
