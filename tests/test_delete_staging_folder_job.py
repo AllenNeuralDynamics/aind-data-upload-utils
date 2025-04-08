@@ -99,7 +99,7 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
             )
         expected_error_message = (
             "Directory /allen/aind/stage/svc_aind_airflow/dev is not under "
-            "staging folder! Will not remove automatically!"
+            "parent folder! Will not remove automatically!"
         )
         self.assertEqual(expected_error_message, e.exception.args[0])
         mock_rm_tree.assert_not_called()
@@ -182,7 +182,7 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
             )
         expected_error_message = (
             "Directory /foo/abc/def is not under "
-            "staging folder! Will not remove automatically!"
+            "parent folder! Will not remove automatically!"
         )
         self.assertEqual(expected_error_message, e.exception.args[0])
         mock_rm_tree.assert_not_called()

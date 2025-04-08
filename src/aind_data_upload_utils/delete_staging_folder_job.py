@@ -9,7 +9,6 @@ import re
 import shutil
 import sys
 from pathlib import Path
-from re import Pattern
 from time import time
 from typing import ClassVar, List
 
@@ -41,7 +40,7 @@ class JobSettings(BaseSettings):
     # In addition to managing permissions, the parent directory
     # pattern is also hard-coded for extra security. We don't want
     # requests to remove anything outside this directory.
-    pattern_to_match: ClassVar[Pattern] = re.compile(
+    pattern_to_match: ClassVar[re.Pattern] = re.compile(
         r"^/allen/aind/stage/svc_aind_airflow/(?:prod|dev)/.+"
     )
 
@@ -104,10 +103,10 @@ class DeleteStagingFolderJob:
           Raises an error if directory does not match regex pattern.
 
         """
-        # Verify directory to remove is under staging directory
+        # Verify directory to remove is under parent directory
         if not re.match(self.job_settings.pattern_to_match, directory):
             raise Exception(
-                f"Directory {directory} is not under staging folder! "
+                f"Directory {directory} is not under parent folder! "
                 f"Will not remove automatically!"
             )
         elif self.job_settings.dry_run:
