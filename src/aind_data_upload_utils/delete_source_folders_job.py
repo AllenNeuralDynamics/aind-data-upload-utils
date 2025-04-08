@@ -24,7 +24,7 @@ logging.basicConfig(level=LOG_LEVEL)
 
 
 class DirectoriesToDeleteConfigs(BaseModel):
-    """Basic model needed from BasicUploadConfigs"""
+    """Basic model that can be easily passed via the transfer service."""
 
     modality_sources: Dict[str, str] = Field(
         default=dict(),
@@ -34,7 +34,7 @@ class DirectoriesToDeleteConfigs(BaseModel):
 
 
 class JobSettings(BaseSettings):
-    """Job settings for DeleteStagingFolderJob"""
+    """Job settings for DeleteSourceFoldersJob"""
 
     directories: DirectoriesToDeleteConfigs
     num_of_dir_levels: int = Field(
@@ -64,7 +64,7 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
     # noinspection PyMissingConstructor
     def __init__(self, job_settings: JobSettings):
         """
-        Class constructor for DeleteStagingFolderJob.
+        Class constructor for DeleteSourceFoldersJob.
 
         Parameters
         ----------
@@ -102,6 +102,7 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
             self._remove_subdirectories(list_of_sub_dirs)
             # Remove top-level folder
             self._remove_directory(folder.as_posix().rstrip("/"))
+        # Remove metadata_dir last since that might be in top level
         metadata_dir = self.job_settings.directories.metadata_dir
         if metadata_dir is not None:
             self._remove_directory(metadata_dir)

@@ -1,5 +1,5 @@
 """
-Module to handle deleting staging folder using dask
+Module to handle deleting folders using dask
 """
 
 import argparse
@@ -24,7 +24,7 @@ logging.basicConfig(level=LOG_LEVEL)
 
 
 class JobSettings(BaseSettings):
-    """Job settings for DeleteStagingFolderJob"""
+    """Job settings for DeleteFoldersJob"""
 
     directories: List[Path] = Field(
         ..., description="Folder(s) to delete.", min_length=1
@@ -56,7 +56,7 @@ class DeleteFoldersJob(DeleteStagingFolderJob):
     # noinspection PyMissingConstructor
     def __init__(self, job_settings: JobSettings):
         """
-        Class constructor for DeleteStagingFolderJob.
+        Class constructor for DeleteFoldersJob.
 
         Parameters
         ----------
