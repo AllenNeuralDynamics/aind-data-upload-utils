@@ -67,7 +67,7 @@ class TestCheckMetadataJob(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 temp_job._check_required_files()
 
-    def test_check_optional_files(self):
+    def test_check_optional_files_valid_missing(self):
         """Test that missing optional files do not raise an error."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_metadata_dir = Path(temp_dir)
@@ -77,6 +77,23 @@ class TestCheckMetadataJob(unittest.TestCase):
             temp_job = CheckMetadataJob(job_settings=temp_job_settings)
 
             self.assertIsNone(temp_job._check_optional_files())
+
+    def test_optional_file_invalid_raises_value_error(self):
+        """Test that a ValueError is raised for invalid optional files."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_metadata_dir = Path(temp_dir)
+            invalid_optional_file = temp_metadata_dir / "processing.json"
+            invalid_optional_file.write_text("{invalid_json}")
+            temp_job_settings = JobSettings(
+                metadata_dir=temp_metadata_dir, dry_run=False
+            )
+            temp_job = CheckMetadataJob(job_settings=temp_job_settings)
+            with self.assertRaises(ValueError) as context:
+                temp_job._check_optional_files()
+            self.assertIn(
+                "Optional file processing.json is invalid.",
+                str(context.exception),
+            )
 
     def test_check_either_or_files_valid(self):
         """
@@ -146,9 +163,9 @@ class TestCheckMetadataJob(unittest.TestCase):
         with self.assertRaises(FileNotFoundError) as e:
             self.job.run_job()
         expected_message = (
-                "None of the files in ('instrument.json', 'rig.json')"
-                " exist or are valid."
-            )
+            "None of the files in ('instrument.json', 'rig.json')"
+            " exist or are valid."
+        )
         self.assertEqual(str(e.exception), expected_message)
         mock_logging_info.assert_called_with(
             "Starting metadata validation job."
