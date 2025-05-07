@@ -9,6 +9,7 @@ import os
 import sys
 from pathlib import Path
 from time import time
+from typing import Union, List
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -21,31 +22,35 @@ logging.basicConfig(level=LOG_LEVEL)
 class JobSettings(BaseSettings):
     """Job settings for CheckMetadataJob"""
 
-    metadata_dir: Path = Field(
+    metadata_dir: Union[Path, str] = Field(
         ..., description="Directory containing metadata JSON files."
     )
-    dry_run: bool = Field(
-        default=False,
-        description="Log validation results without raising errors.",
+    required_files: List[str] = Field(
+        default=[
+            "data_description.json",
+            "subject.json",
+            "procedures.json",
+        ],
+        description="List of required metadata files.",
+    )
+    optional_files: List[str] = Field(
+        default=[
+            "processing.json",
+            "quality_control.json",
+        ],
+        description="List of optional metadata files.",
+    )
+    either_or_files: List[tuple] = Field(
+        default=[
+            ("instrument.json", "rig.json"),
+            ("acquisition.json", "session.json"),
+        ],
+        description="List of either/or metadata file pairs.",
     )
 
 
 class CheckMetadataJob:
     """Job to validate the existence and format of metadata JSON files."""
-
-    REQUIRED_FILES = [
-        "data_description.json",
-        "subject.json",
-        "procedures.json",
-    ]
-    OPTIONAL_FILES = [
-        "processing.json",
-        "quality_control.json",
-    ]
-    EITHER_OR_FILES = [
-        ("instrument.json", "rig.json"),
-        ("acquisition.json", "session.json"),
-    ]
 
     def __init__(self, job_settings: JobSettings):
         """
@@ -58,7 +63,7 @@ class CheckMetadataJob:
         self.job_settings = job_settings
 
     @staticmethod
-    def _validate_json(file_path: Path) -> bool:
+    def _validate_json(file_path: Path) -> None:
         """
         Validates that a file exists and is valid JSON.
 
@@ -66,67 +71,57 @@ class CheckMetadataJob:
         ----------
         file_path : Path
 
-        Returns
-        -------
-        bool
-            True if the file is valid JSON, False otherwise.
+         Raises
+        ------
+        FileNotFoundError
+            If the file does not exist.
+        json.JSONDecodeError
+            If the file is not valid JSON.
         """
-        try:
-            with open(file_path, "r") as f:
-                json.load(f)
+        with open(file_path, "r") as f:
+            json.load(f)
             logging.debug(f"Validated JSON file: {file_path}")
-            return True
-        except (json.JSONDecodeError, FileNotFoundError) as e:
-            logging.error(f"Validation failed for {file_path}: {e}")
-            return False
-
-    def _check_required_files(self) -> None:
-        """Checks that all required files exist and are valid JSON."""
-        for file_name in self.REQUIRED_FILES:
-            file_path = self.job_settings.metadata_dir / file_name
-            if (
-                not self._validate_json(file_path)
-                and not self.job_settings.dry_run
-            ):
-                raise FileNotFoundError(
-                    f"Required file {file_name} is missing or invalid."
-                )
-
-    def _check_optional_files(self) -> None:
-        """Checks that optional files, if they exist, are valid JSON."""
-        for file_name in self.OPTIONAL_FILES:
-            file_path = self.job_settings.metadata_dir / file_name
-            if file_path.exists():
-                if (
-                    not self._validate_json(file_path)
-                    and not self.job_settings.dry_run
-                ):
-                    raise ValueError(f"Optional file {file_name} is invalid.")
-
-    def _check_either_or_files(self) -> None:
-        """
-        Checks that at least one file in each either-or pair exists
-        and is valid JSON.
-        """
-        for file_pair in self.EITHER_OR_FILES:
-            valid = False
-            for file_name in file_pair:
-                file_path = self.job_settings.metadata_dir / file_name
-                if self._validate_json(file_path):
-                    valid = True
-                    break
-            if not valid and not self.job_settings.dry_run:
-                raise FileNotFoundError(
-                    f"None of the files in {file_pair} exist or are valid."
-                )
 
     def run_job(self):
         """Main job runner. Validates metadata files."""
         job_start_time = time()
         logging.info("Starting metadata validation job.")
-        self._check_required_files()
-        self._check_optional_files()
-        self._check_either_or_files()
+        available_files = {
+            file.name for file in self.job_settings.metadata_dir.glob("*.json")
+        }
+
+        # Check required files
+        missing_required = (
+            set(self.job_settings.required_files) - available_files
+        )
+        if missing_required:
+            raise FileNotFoundError(
+                f"Missing required files: {missing_required}"
+            )
+        for file_name in self.job_settings.required_files:
+            self._validate_json(self.job_settings.metadata_dir / file_name)
+
+        # Check optional files
+        for file_name in (
+            set(self.job_settings.optional_files) & available_files
+        ):
+            self._validate_json(self.job_settings.metadata_dir / file_name)
+
+        # Check either-or files
+        for file_pair in self.job_settings.either_or_files:
+            if not any(
+                (self.job_settings.metadata_dir / file_name).exists()
+                for file_name in file_pair
+            ):
+                raise FileNotFoundError(
+                    f"Neither of the files in {file_pair} exist."
+                )
+            for file_name in file_pair:
+                file_path = self.job_settings.metadata_dir / file_name
+                if file_path.exists():
+                    self._validate_json(file_path)
+                    break
+
         job_end_time = time()
         execution_time = job_end_time - job_start_time
         logging.info(
