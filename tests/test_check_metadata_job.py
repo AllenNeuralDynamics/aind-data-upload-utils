@@ -1,3 +1,5 @@
+"""Module for testing the CheckMetadataJob class."""
+
 import unittest
 import tempfile
 import shutil
