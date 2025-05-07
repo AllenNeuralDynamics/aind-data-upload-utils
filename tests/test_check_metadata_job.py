@@ -145,11 +145,11 @@ class TestCheckMetadataJob(unittest.TestCase):
         # metadata_dir does not have either/or files
         with self.assertRaises(FileNotFoundError) as e:
             self.job.run_job()
-            expected_message = (
+        expected_message = (
                 "None of the files in ('instrument.json', 'rig.json')"
                 " exist or are valid."
             )
-            self.assertEqual(str(e.exception), expected_message)
+        self.assertEqual(str(e.exception), expected_message)
         mock_logging_info.assert_called_with(
             "Starting metadata validation job."
         )
