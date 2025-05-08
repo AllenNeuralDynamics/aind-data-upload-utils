@@ -1,0 +1,15 @@
+{
+    "describedBy": "https://raw.githubusercontent.com/AllenNeuralDynamics/aind-data-schema/main/src/aind_data_schema/core/session.py",
+    "schema_version": "1.1.2",
+    "protocol_id": [],
+    "experimenter_full_name": [
+       "Max Quibble",
+       "Finn Tickle"
+    ],
+    "session_start_time": "2023-04-25T02:35:00Z",
+    "session_end_time": "2023-04-25T03:16:00Z",
+    "session_type": "Receptive field mapping",
+    "iacuc_protocol": "2109",
+    "rig_id": "323_EPHYS1_20231003",
+    "subject_id": "12345"
+}
