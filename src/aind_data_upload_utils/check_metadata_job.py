@@ -39,7 +39,7 @@ class JobSettings(BaseSettings):
         },
         description="List of optional metadata files.",
     )
-    either_or_files: List[Tuple[str, str]] = Field(
+    either_or_files: Set[Tuple[str, str]] = Field(
         default={
             ("instrument.json", "rig.json"),
             ("acquisition.json", "session.json"),
