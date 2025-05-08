@@ -111,7 +111,6 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         mock_remove_directory.return_value = None
         self.example_job.run_job()
         mock_remove_subdirectories.assert_called()
-        print(mock_remove_directory.mock_calls)
         mock_remove_directory.assert_has_calls(
             [
                 call(str(EPHYS_DIR)),

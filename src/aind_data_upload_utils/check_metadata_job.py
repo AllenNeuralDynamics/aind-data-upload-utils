@@ -8,8 +8,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from time import time
-from typing import Union, List
+from typing import List, Set, Tuple, Union
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -25,28 +24,35 @@ class JobSettings(BaseSettings):
     metadata_dir: Union[Path, str] = Field(
         ..., description="Directory containing metadata JSON files."
     )
-    required_files: List[str] = Field(
-        default=[
+    required_files: Set[str] = Field(
+        default={
             "data_description.json",
             "subject.json",
             "procedures.json",
-        ],
+        },
         description="List of required metadata files.",
     )
-    optional_files: List[str] = Field(
-        default=[
+    optional_files: Set[str] = Field(
+        default={
             "processing.json",
             "quality_control.json",
-        ],
+        },
         description="List of optional metadata files.",
     )
-    either_or_files: List[tuple] = Field(
-        default=[
+    either_or_files: List[Tuple[str, str]] = Field(
+        default={
             ("instrument.json", "rig.json"),
             ("acquisition.json", "session.json"),
-        ],
+        },
         description="List of either/or metadata file pairs.",
     )
+
+    @property
+    def all_files(self) -> Set[str]:
+        """Return all possible metadata files."""
+        return self.required_files.union(self.optional_files).union(
+            set([x for xs in self.either_or_files for x in xs])
+        )
 
 
 class CheckMetadataJob:
@@ -63,70 +69,44 @@ class CheckMetadataJob:
         self.job_settings = job_settings
 
     @staticmethod
-    def _validate_json(file_path: Path) -> None:
-        """
-        Validates that a file exists and is valid JSON.
+    def _check_either_or_pair(
+        pair: Tuple[str, str], metadata_files: Set[str]
+    ) -> None:
+        """Verify that only of the files in a pair is in the metadata dir."""
 
-        Parameters
-        ----------
-        file_path : Path
-
-         Raises
-        ------
-        FileNotFoundError
-            If the file does not exist.
-        json.JSONDecodeError
-            If the file is not valid JSON.
-        """
-        with open(file_path, "r") as f:
-            json.load(f)
-            logging.debug(f"Validated JSON file: {file_path}")
+        if not pair[0] in metadata_files and not pair[1] in metadata_files:
+            raise FileNotFoundError(f"Neither of the files in {pair} exist!")
+        if pair[0] in metadata_files and pair[1] in metadata_files:
+            raise ValueError(f"Only one of {pair} can be present!")
+        return None
 
     def run_job(self):
         """Main job runner. Validates metadata files."""
-        job_start_time = time()
-        logging.info("Starting metadata validation job.")
-        available_files = {
-            file.name for file in self.job_settings.metadata_dir.glob("*.json")
+
+        json_files = {
+            file.name
+            for file in Path(self.job_settings.metadata_dir).glob("*.json")
         }
 
-        # Check required files
+        metadata_files = self.job_settings.all_files.intersection(json_files)
         missing_required = (
-            set(self.job_settings.required_files) - available_files
+            set(self.job_settings.required_files) - metadata_files
         )
         if missing_required:
             raise FileNotFoundError(
                 f"Missing required files: {missing_required}"
             )
-        for file_name in self.job_settings.required_files:
-            self._validate_json(self.job_settings.metadata_dir / file_name)
 
-        # Check optional files
-        for file_name in (
-            set(self.job_settings.optional_files) & available_files
-        ):
-            self._validate_json(self.job_settings.metadata_dir / file_name)
-
-        # Check either-or files
         for file_pair in self.job_settings.either_or_files:
-            if not any(
-                (self.job_settings.metadata_dir / file_name).exists()
-                for file_name in file_pair
-            ):
-                raise FileNotFoundError(
-                    f"Neither of the files in {file_pair} exist."
-                )
-            for file_name in file_pair:
-                file_path = self.job_settings.metadata_dir / file_name
-                if file_path.exists():
-                    self._validate_json(file_path)
-                    break
+            self._check_either_or_pair(
+                pair=file_pair, metadata_files=metadata_files
+            )
 
-        job_end_time = time()
-        execution_time = job_end_time - job_start_time
-        logging.info(
-            f"Metadata validation completed in {execution_time:.2f} seconds."
-        )
+        # Validate json
+        for file_name in metadata_files:
+            path = Path(self.job_settings.metadata_dir) / file_name
+            with open(path, "r") as f:
+                json.load(f)
 
 
 if __name__ == "__main__":
