@@ -8,7 +8,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import List, Set, Tuple, Union
+from typing import Set, Tuple, Union
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
