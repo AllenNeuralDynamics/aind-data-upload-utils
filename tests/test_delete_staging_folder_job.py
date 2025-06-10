@@ -79,15 +79,39 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
 
         mock_rm_tree.assert_not_called()
 
+    @patch("os.path.exists")
     @patch("shutil.rmtree")
-    def test_remove_directory_success(self, mock_rm_tree: MagicMock):
+    def test_remove_directory_success(
+        self, mock_rm_tree: MagicMock, mock_exists: MagicMock
+    ):
         """Tests _remove_directory when valid path is passed."""
+        mock_exists.return_value = True
         self.example_job._remove_directory(
             "/allen/aind/stage/svc_aind_airflow/dev/abc"
         )
         mock_rm_tree.assert_called_once_with(
             "/allen/aind/stage/svc_aind_airflow/dev/abc"
         )
+
+    @patch("os.path.exists")
+    @patch("shutil.rmtree")
+    def test_remove_directory_not_exists(
+        self, mock_rm_tree: MagicMock, mock_exists: MagicMock
+    ):
+        """Tests _remove_directory when directory does not exist."""
+        mock_exists.return_value = False
+        with self.assertLogs(level="INFO") as captured:
+            self.example_job._remove_directory(
+                "/allen/aind/stage/svc_aind_airflow/dev/abc"
+            )
+        expected_output = [
+            (
+                "WARNING:root:/allen/aind/stage/svc_aind_airflow/dev/abc"
+                " does not exist!"
+            )
+        ]
+        mock_rm_tree.assert_not_called()
+        self.assertEqual(expected_output, captured.output)
 
     @patch("shutil.rmtree")
     def test_remove_directory_error(self, mock_rm_tree: MagicMock):
@@ -104,13 +128,17 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         self.assertEqual(expected_error_message, e.exception.args[0])
         mock_rm_tree.assert_not_called()
 
+    @patch("os.path.exists")
     @patch("logging.info")
     @patch("shutil.rmtree")
     def test_remove_directory_dry_run(
-        self, mock_rm_tree: MagicMock, mock_log_info: MagicMock
+        self,
+        mock_rm_tree: MagicMock,
+        mock_log_info: MagicMock,
+        mock_exists: MagicMock,
     ):
         """Tests _remove_directory when dry_run is set to True."""
-
+        mock_exists.return_value = True
         job_settings = JobSettings(
             staging_directory=SMART_SPIM_DIR, num_of_dir_levels=1, dry_run=True
         )
@@ -121,12 +149,18 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         )
         mock_rm_tree.assert_not_called()
 
+    @patch("os.path.exists")
     @patch("shutil.rmtree")
     @patch("logging.debug")
     def test_dask_task_to_process_directory_list(
-        self, mock_log_debug: MagicMock, mock_rm_tree: MagicMock
+        self,
+        mock_log_debug: MagicMock,
+        mock_rm_tree: MagicMock,
+        mock_exists: MagicMock,
     ):
         """Tests _dask_task_to_process_directory_list."""
+        mock_exists.return_value = True
+
         dir_list = [
             "/allen/aind/stage/svc_aind_airflow/dev/abc/def",
             "/allen/aind/stage/svc_aind_airflow/dev/abc/ghi",
