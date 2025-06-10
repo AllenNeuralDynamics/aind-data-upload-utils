@@ -109,6 +109,8 @@ class DeleteStagingFolderJob:
                 f"Directory {directory} is not under parent folder! "
                 f"Will not remove automatically!"
             )
+        elif not os.path.exists(directory):
+            logging.warning(f"{directory} does not exist!")
         elif self.job_settings.dry_run:
             logging.info(f"Removing: {directory}")
         else:
