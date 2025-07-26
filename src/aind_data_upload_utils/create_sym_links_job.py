@@ -18,7 +18,7 @@ class JobSettings(
 ):
     """Job settings for CreateSymLinksJob"""
 
-    input_directory: str = Field(...)
+    input_source: str = Field(...)
     output_directory: str = Field(...)
     chunk: Optional[str] = Field(default=None)
     dry_run: bool = Field(
@@ -65,9 +65,9 @@ class CreateSymLinksJob:
 
         logging.debug("Extracting list of files")
         chunk = self.job_settings.chunk
-        directory_path = self.job_settings.input_directory
+        directory_path = self.job_settings.input_source
         if chunk is None:
-            paths_to_process = [self.job_settings.input_directory]
+            paths_to_process = [self.job_settings.input_source]
         else:
             all_paths = glob(
                 os.path.join(directory_path, "**", f"*{chunk}*"),
@@ -89,7 +89,7 @@ class CreateSymLinksJob:
                 dst = self.job_settings.output_directory
             else:
                 rel_path = os.path.relpath(
-                    f, start=self.job_settings.input_directory
+                    f, start=self.job_settings.input_source
                 )
                 dst = os.path.join(
                     self.job_settings.output_directory, rel_path
