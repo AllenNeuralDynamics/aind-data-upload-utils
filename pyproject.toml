@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aind-data-upload-utils"
-description = "Generated from aind-library-template"
+description = "Jobs to help process and upload data."
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
@@ -19,7 +19,7 @@ dynamic = ["version"]
 dependencies = [
     'dask',
     'pydantic>2.9',
-    'pydantic-settings>=2.0'
+    'pydantic-settings>=2.8'
 ]
 
 [project.optional-dependencies]
