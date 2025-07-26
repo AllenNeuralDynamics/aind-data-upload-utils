@@ -21,7 +21,7 @@ class TestCreateSymLinksJob(unittest.TestCase):
         """Tests _extract_list_of_files with no chunk parameter"""
 
         settings = JobSettings(
-            input_directory=str(EXAMPLE_SOURCE_DIR),
+            input_source=str(EXAMPLE_SOURCE_DIR),
             output_directory=str(RESOURCES_DIR),
         )
         job = CreateSymLinksJob(job_settings=settings)
@@ -33,7 +33,7 @@ class TestCreateSymLinksJob(unittest.TestCase):
         """Tests _extract_list_of_files with with chunk parameter"""
 
         settings = JobSettings(
-            input_directory=str(EXAMPLE_SOURCE_DIR),
+            input_source=str(EXAMPLE_SOURCE_DIR),
             output_directory=str(RESOURCES_DIR),
             chunk="2025-01-31T19-00-00",
         )
@@ -184,14 +184,14 @@ class TestCreateSymLinksJob(unittest.TestCase):
         src = str(EXAMPLE_SOURCE_DIR / "behavior-videos")
         dst = str(RESOURCES_DIR / "behavior-videos")
         settings = JobSettings(
-            input_directory=src, output_directory=dst, dry_run=True
+            input_source=src, output_directory=dst, dry_run=True
         )
         job = CreateSymLinksJob(job_settings=settings)
         with self.assertLogs(level="DEBUG") as captured:
             job.run_job()
         expected_logs = [
             (
-                f"DEBUG:root:Running job with settings input_directory='{src}'"
+                f"DEBUG:root:Running job with settings input_source='{src}'"
                 f" output_directory='{dst}' "
                 f"chunk=None "
                 f"dry_run=True"
@@ -213,7 +213,7 @@ class TestCreateSymLinksJob(unittest.TestCase):
         src = str(EXAMPLE_SOURCE_DIR / "behavior-videos")
         dst = str(RESOURCES_DIR / "behavior-videos")
         settings = JobSettings(
-            input_directory=src,
+            input_source=src,
             output_directory=dst,
             chunk="2025-01-31T19-00-00",
             dry_run=True,
@@ -223,7 +223,7 @@ class TestCreateSymLinksJob(unittest.TestCase):
             job.run_job()
         expected_logs = [
             (
-                f"DEBUG:root:Running job with settings input_directory='{src}'"
+                f"DEBUG:root:Running job with settings input_source='{src}'"
                 f" output_directory='{dst}' "
                 f"chunk='2025-01-31T19-00-00' "
                 f"dry_run=True"
