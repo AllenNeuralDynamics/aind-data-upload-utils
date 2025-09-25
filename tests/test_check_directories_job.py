@@ -3,7 +3,7 @@
 import os
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, Mock, call, patch
 
 from aind_data_upload_utils.check_directories_job import (
     CheckDirectoriesJob,
@@ -164,12 +164,13 @@ class TestCheckDirectoriesJob(unittest.TestCase):
             e.exception.args[0],
         )
 
+    @patch("logging.debug")
     @patch(
         "aind_data_upload_utils.check_directories_job.CheckDirectoriesJob."
         "_check_path"
     )
     def test_get_list_of_directories_to_check(
-        self, mock_check_path: MagicMock
+        self, mock_check_path: MagicMock, mock_logging_debug: MagicMock
     ):
         """Tests _get_list_of_directories_to_check"""
         mock_check_path.return_value = True
@@ -263,6 +264,36 @@ class TestCheckDirectoriesJob(unittest.TestCase):
         self.assertCountEqual(
             self.expected_list_of_directories_to_check, list_of_directories
         )
+        mock_logging_debug.assert_called_once()
+
+    @patch("logging.debug")
+    def test_get_list_of_directories_to_check_error(
+        self, mock_logging_debug: Mock
+    ):
+        """Tests get_list_of_directories_to_check when missing metadata dir."""
+
+        missing_directory = str(RESOURCES_DIR / "MISSING_DIRECTORY")
+        example_upload_configs = DirectoriesToCheckConfigs(
+            modality_sources={
+                "ecephys": str(RESOURCES_DIR / "example_ephys_data_set"),
+            },
+            metadata_dir=missing_directory,
+        )
+        job = CheckDirectoriesJob(
+            job_settings=JobSettings(
+                directories_to_check_configs=example_upload_configs,
+            )
+        )
+        with self.assertRaises(FileNotFoundError) as e:
+            job._get_list_of_directories_to_check()
+        self.assertEqual(
+            (
+                f"{missing_directory} is neither a directory, file, nor valid "
+                f"symlink"
+            ),
+            str(e.exception),
+        )
+        mock_logging_debug.assert_called_once()
 
     @patch(
         "aind_data_upload_utils.check_directories_job.CheckDirectoriesJob."

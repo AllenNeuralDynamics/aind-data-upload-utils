@@ -90,6 +90,8 @@ class CheckDirectoriesJob:
         directories_to_check = []
         # First, check all the json files in the metadata dir
         if dirs_to_check_configs.metadata_dir is not None:
+            logging.debug(f"Checking {dirs_to_check_configs.metadata_dir}")
+            self._check_path(dirs_to_check_configs.metadata_dir)
             metadata_dir_path = str(dirs_to_check_configs.metadata_dir).rstrip(
                 "/"
             )
