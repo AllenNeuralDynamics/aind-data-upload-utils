@@ -10,7 +10,9 @@ import sys
 from pathlib import Path
 from time import time
 from typing import ClassVar, Dict, List, Optional, Union
+from urllib.parse import urlparse
 
+import boto3
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
 
@@ -19,7 +21,7 @@ from aind_data_upload_utils.delete_staging_folder_job import (
     DeleteStagingFolderJob,
 )
 
-LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logging.basicConfig(level=LOG_LEVEL)
 
 
@@ -45,16 +47,18 @@ class JobSettings(BaseSettings):
         default=20, description="Number of dask tasks to run in parallel"
     )
     dry_run: bool = Field(
-        default=False,
+        default=True,
         description="Log commands without actually deleting anything",
+    )
+    s3_location: str = Field(
+        description="Will verify the s3_location exists first."
     )
 
     # In addition to managing permissions, the parent directory
     # pattern is also hard-coded for extra security. We don't want
     # requests to remove anything outside this directory.
     pattern_to_match: ClassVar[re.Pattern] = re.compile(
-        r"^/allen/aind/stage/svc_aind_airflow/(?:prod|dev)/.+|"
-        r"^/allen/aind/scratch/.+/.+"
+        r"^/allen/aind/(?:stage|scratch)/.+/.+"
     )
 
 
@@ -71,6 +75,54 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
         job_settings: JobSettings
         """
         self.job_settings = job_settings
+
+    def _s3_check(self) -> None:
+        """Check that s3 obj exists with expected subdirectories and files."""
+        logging.info(f"Checking {self.job_settings.s3_location}.")
+        s3_location = self.job_settings.s3_location
+        parsed_url = urlparse(s3_location, allow_fragments=False)
+        bucket = parsed_url.netloc
+        prefix = f"{parsed_url.path.lstrip('/')}/"
+        s3_client = boto3.client("s3")
+        response = s3_client.list_objects_v2(
+            Bucket=bucket, Prefix=prefix, Delimiter="/"
+        )
+        if response["IsTruncated"]:
+            raise Exception(f"Unexpected number of objects in {s3_location}!")
+        keys = [row["Key"] for row in response["Contents"]]
+        common_prefixes = [row["Prefix"] for row in response["CommonPrefixes"]]
+        s3_files = [k.replace(prefix, "") for k in keys]
+        s3_folders = [
+            p.replace(prefix, "").strip("/") for p in common_prefixes
+        ]
+        logging.info(f"Files in S3: {s3_files}.")
+        logging.info(f"Folders in S3: {s3_folders}.")
+        local_md_files = []
+        local_md_dir = self.job_settings.directories.metadata_dir
+        if local_md_dir is not None:
+            md_files = os.listdir(local_md_dir)
+            local_md_files = [f for f in md_files if f.endswith(".json")]
+        files_in_both_places = set(s3_files).intersection(local_md_files)
+        files_locally_not_in_s3 = set(local_md_files).difference(
+            files_in_both_places
+        )
+        if files_locally_not_in_s3 != set():
+            raise Exception(
+                f"There are files in {local_md_dir} not found in S3! "
+                f"{files_locally_not_in_s3}"
+            )
+        local_srcs = self.job_settings.directories.modality_sources
+        local_dirs = local_srcs.keys()
+        dirs_in_both_places = set(s3_folders).intersection(local_dirs)
+        dirs_locally_not_in_s3 = set(local_dirs).difference(
+            dirs_in_both_places
+        )
+        if dirs_locally_not_in_s3 != set():
+            raise Exception(
+                f"There are modalities in {local_srcs} not found in S3! "
+                f"{dirs_locally_not_in_s3}"
+            )
+        logging.info(f"Finished checking {self.job_settings.s3_location}.")
 
     def _get_list_of_modality_directories(self) -> List[Union[Path, str]]:
         """
@@ -95,6 +147,7 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
         """Main job runner. Walks num_of_dir_levels deep and removes all
         subdirectories in that level. Then removes top directory."""
         job_start_time = time()
+        self._s3_check()
         folders_to_remove = self._get_list_of_modality_directories()
         for folder in folders_to_remove:
             # Remove batches of subdirectories in parallel

@@ -86,9 +86,11 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
     ):
         """Tests _remove_directory when valid path is passed."""
         mock_exists.return_value = True
-        self.example_job._remove_directory(
-            "/allen/aind/stage/svc_aind_airflow/dev/abc"
-        )
+        with self.assertLogs(level="INFO") as captured:
+            self.example_job._remove_directory(
+                "/allen/aind/stage/svc_aind_airflow/dev/abc"
+            )
+        self.assertEqual(1, len(captured.output))
         mock_rm_tree.assert_called_once_with(
             "/allen/aind/stage/svc_aind_airflow/dev/abc"
         )
@@ -128,6 +130,17 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         self.assertEqual(expected_error_message, e.exception.args[0])
         mock_rm_tree.assert_not_called()
 
+    @patch("shutil.rmtree")
+    def test_remove_directory_norm_error(self, mock_rm_tree: MagicMock):
+        """Tests _remove_directory when path is not normalized."""
+
+        with self.assertRaises(Exception) as e:
+            self.example_job._remove_directory(
+                "/allen/aind/stage/svc_aind_airflow/dev/../abc"
+            )
+        self.assertIn("needs to be absolute and normalized!", str(e.exception))
+        mock_rm_tree.assert_not_called()
+
     @patch("os.path.exists")
     @patch("logging.info")
     @patch("shutil.rmtree")
@@ -145,7 +158,8 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         job = DeleteStagingFolderJob(job_settings=job_settings)
         job._remove_directory("/allen/aind/stage/svc_aind_airflow/dev/abc")
         mock_log_info.assert_called_once_with(
-            "Removing: /allen/aind/stage/svc_aind_airflow/dev/abc"
+            "(DRYRUN): "
+            "shutil.rmtree(/allen/aind/stage/svc_aind_airflow/dev/abc)"
         )
         mock_rm_tree.assert_not_called()
 
@@ -166,9 +180,10 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
             "/allen/aind/stage/svc_aind_airflow/dev/abc/ghi",
             "/allen/aind/stage/svc_aind_airflow/dev/abc/jkl",
         ]
-        self.example_job._dask_task_to_process_directory_list(
-            directories=dir_list
-        )
+        with self.assertLogs(level="INFO") as captured:
+            self.example_job._dask_task_to_process_directory_list(
+                directories=dir_list
+            )
         mock_rm_tree.assert_has_calls(
             [
                 call("/allen/aind/stage/svc_aind_airflow/dev/abc/def"),
@@ -198,6 +213,7 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
                 ),
             ]
         )
+        self.assertEqual(3, len(captured.output))
 
     @patch("shutil.rmtree")
     @patch("logging.debug")
