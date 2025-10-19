@@ -17,7 +17,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 
 # Set log level from env var
-LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logging.basicConfig(level=LOG_LEVEL)
 
 
@@ -104,6 +104,11 @@ class DeleteStagingFolderJob:
 
         """
         # Verify directory to remove is under parent directory
+        norm_path = os.path.normpath(directory)
+        if norm_path != directory or not os.path.isabs(directory):
+            raise Exception(
+                f"{directory} needs to be absolute and normalized!"
+            )
         if not re.match(self.job_settings.pattern_to_match, directory):
             raise Exception(
                 f"Directory {directory} is not under parent folder! "
@@ -112,8 +117,9 @@ class DeleteStagingFolderJob:
         elif not os.path.exists(directory):
             logging.warning(f"{directory} does not exist!")
         elif self.job_settings.dry_run:
-            logging.info(f"Removing: {directory}")
+            logging.info(f"(DRYRUN): shutil.rmtree({directory})")
         else:
+            logging.info(f"Removing {directory}.")
             shutil.rmtree(directory)
 
     def _dask_task_to_process_directory_list(

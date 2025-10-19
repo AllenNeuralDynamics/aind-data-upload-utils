@@ -19,7 +19,8 @@ dynamic = ["version"]
 dependencies = [
     'dask',
     'pydantic>2.9',
-    'pydantic-settings>=2.8'
+    'pydantic-settings>=2.8',
+    'boto3'
 ]
 
 [project.optional-dependencies]
