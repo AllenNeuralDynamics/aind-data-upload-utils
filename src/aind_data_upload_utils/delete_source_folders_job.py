@@ -47,7 +47,7 @@ class JobSettings(BaseSettings):
         default=20, description="Number of dask tasks to run in parallel"
     )
     dry_run: bool = Field(
-        default=False,
+        default=True,
         description="Log commands without actually deleting anything",
     )
     s3_location: str = Field(
