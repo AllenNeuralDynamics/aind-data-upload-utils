@@ -117,7 +117,7 @@ class DeleteStagingFolderJob:
         elif not os.path.exists(directory):
             logging.warning(f"{directory} does not exist!")
         elif self.job_settings.dry_run:
-            logging.info(f"(DRYRUN): shutil.rmtree({directory})")
+            logging.info(f"(DRYRUN): shutil.rmtree('{directory}')")
         else:
             logging.info(f"Removing {directory}.")
             shutil.rmtree(directory)

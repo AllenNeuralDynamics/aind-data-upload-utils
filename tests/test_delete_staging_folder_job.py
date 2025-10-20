@@ -159,7 +159,7 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         job._remove_directory("/allen/aind/stage/svc_aind_airflow/dev/abc")
         mock_log_info.assert_called_once_with(
             "(DRYRUN): "
-            "shutil.rmtree(/allen/aind/stage/svc_aind_airflow/dev/abc)"
+            "shutil.rmtree('/allen/aind/stage/svc_aind_airflow/dev/abc')"
         )
         mock_rm_tree.assert_not_called()
 
