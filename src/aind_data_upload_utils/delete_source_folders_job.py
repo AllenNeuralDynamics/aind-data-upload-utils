@@ -58,7 +58,7 @@ class JobSettings(BaseSettings):
     # pattern is also hard-coded for extra security. We don't want
     # requests to remove anything outside this directory.
     pattern_to_match: ClassVar[re.Pattern] = re.compile(
-        r"^/allen/aind/(?:stage|scratch)/.+/.+"
+        r"^/{1,2}allen/aind/(?:stage|scratch)/.+/.+"
     )
 
 
