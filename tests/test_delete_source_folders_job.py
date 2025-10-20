@@ -60,18 +60,26 @@ class TestJobSettings(unittest.TestCase):
         good_match_3 = (
             "/allen/aind/scratch/dynamic_foraging_rig_transfer/behavior"
         )
+        good_match_4 = (
+            "//allen/aind/scratch/dynamic_foraging_rig_transfer/behavior"
+        )
         bad_match_1 = "/ allen/aind/stage/svc_aind_airflow/prod/"
         bad_match_2 = "/"
         bad_match_3 = "/something/else/here"
         bad_match_4 = "/allen/aind/scratch/dynamic_foraging_rig_transfer/"
+        bad_match_5 = (
+            "///allen/aind/scratch/dynamic_foraging_rig_transfer/behavior"
+        )
 
         self.assertRegex(good_match_1, job_settings.pattern_to_match)
         self.assertRegex(good_match_2, job_settings.pattern_to_match)
         self.assertRegex(good_match_3, job_settings.pattern_to_match)
+        self.assertRegex(good_match_4, job_settings.pattern_to_match)
         self.assertNotRegex(bad_match_1, job_settings.pattern_to_match)
         self.assertNotRegex(bad_match_2, job_settings.pattern_to_match)
         self.assertNotRegex(bad_match_3, job_settings.pattern_to_match)
         self.assertNotRegex(bad_match_4, job_settings.pattern_to_match)
+        self.assertNotRegex(bad_match_5, job_settings.pattern_to_match)
 
 
 class TestDeleteSourceFoldersJob(unittest.TestCase):
