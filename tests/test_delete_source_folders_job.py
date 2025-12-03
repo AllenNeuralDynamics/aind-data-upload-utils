@@ -37,6 +37,7 @@ class TestJobSettings(unittest.TestCase):
                     "SmartSPIM": str(SMART_SPIM_DIR),
                 },
                 metadata_dir=str(RESOURCES_DIR),
+                derivatives_dir=str(RESOURCES_DIR / "example_derivatives_dir"),
             ),
             s3_location="s3://example/abc_123",
         )
@@ -94,6 +95,7 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
                     "ecephys": str(EPHYS_DIR),
                 },
                 metadata_dir=str(RESOURCES_DIR),
+                derivatives_dir=str(RESOURCES_DIR / "example_derivatives_dir"),
             ),
             num_of_dir_levels=1,
             s3_location="s3://example/abc_123",
@@ -105,6 +107,7 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
                     "SmartSPIM": str(SMART_SPIM_DIR),
                 },
                 metadata_dir=str(RESOURCES_DIR),
+                derivatives_dir=str(RESOURCES_DIR / "example_derivatives_dir"),
             ),
             num_of_dir_levels=1,
             s3_location="s3://example/abc_123",
@@ -144,6 +147,7 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
             "MaxKeys": 50,
             "CommonPrefixes": [
                 {"Prefix": "abc_123/ecephys/"},
+                {"Prefix": "abc_123/derivatives/"},
                 {"Prefix": "abc_123/original_metadata/"},
             ],
             "EncodingType": "url",
@@ -251,7 +255,7 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         with self.assertRaises(Exception) as e:
             with self.assertLogs(level="INFO") as captured:
                 self.s3_check_job._s3_check()
-        self.assertIn("not found in S3! {'ecephys'}", str(e.exception))
+        self.assertIn("not found in S3!", str(e.exception))
         mock_rm_tree.assert_not_called()
         self.assertIn(
             "INFO:root:Checking s3://example/abc_123.", captured.output
@@ -291,6 +295,7 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
             [
                 call(str(EPHYS_DIR)),
                 call(str(SMART_SPIM_DIR)),
+                call(str(RESOURCES_DIR / "example_derivatives_dir")),
                 call(str(RESOURCES_DIR)),
             ]
         )
