@@ -33,6 +33,7 @@ class DirectoriesToDeleteConfigs(BaseModel):
         description="Looks like {'ecephys':'folder', 'behavior': 'folder2'}",
     )
     metadata_dir: Optional[str] = Field(default=None)
+    derivatives_dir: Optional[str] = Field(default=None)
 
 
 class JobSettings(BaseSettings):
@@ -112,15 +113,17 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
                 f"{files_locally_not_in_s3}"
             )
         local_srcs = self.job_settings.directories.modality_sources
-        local_dirs = local_srcs.keys()
+        local_dirs = set(local_srcs.keys())
+        if self.job_settings.directories.derivatives_dir is not None:
+            local_dirs.add("derivatives")
         dirs_in_both_places = set(s3_folders).intersection(local_dirs)
         dirs_locally_not_in_s3 = set(local_dirs).difference(
             dirs_in_both_places
         )
         if dirs_locally_not_in_s3 != set():
             raise Exception(
-                f"There are modalities in {local_srcs} not found in S3! "
-                f"{dirs_locally_not_in_s3}"
+                f"There are directories in {self.job_settings.directories} "
+                f"not found in S3! {dirs_locally_not_in_s3}"
             )
         logging.info(f"Finished checking {self.job_settings.s3_location}.")
 
@@ -155,6 +158,9 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
             self._remove_subdirectories(list_of_sub_dirs)
             # Remove top-level folder
             self._remove_directory(folder.as_posix().rstrip("/"))
+        derivatives_dir = self.job_settings.directories.derivatives_dir
+        if derivatives_dir is not None:
+            self._remove_directory(derivatives_dir)
         # Remove metadata_dir last since that might be in top level
         metadata_dir = self.job_settings.directories.metadata_dir
         if metadata_dir is not None:

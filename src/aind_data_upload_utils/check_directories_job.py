@@ -29,6 +29,7 @@ class DirectoriesToCheckConfigs(BaseModel):
         description="Looks like {'ecephys':'folder', 'behavior': 'folder2'}",
     )
     metadata_dir: Optional[str] = Field(default=None)
+    derivatives_dir: Optional[str] = Field(default=None)
 
 
 class JobSettings(BaseSettings, extra="allow"):
@@ -97,6 +98,9 @@ class CheckDirectoriesJob:
             )
             for json_file in glob(f"{metadata_dir_path}/*.json"):
                 self._check_path(Path(json_file).as_posix())
+        if dirs_to_check_configs.derivatives_dir is not None:
+            logging.debug(f"Checking {dirs_to_check_configs.derivatives_dir}")
+            self._check_path(dirs_to_check_configs.derivatives_dir)
         # Next add modality directories
         for (
             modality_abbr,

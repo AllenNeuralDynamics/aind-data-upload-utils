@@ -37,6 +37,7 @@ class TestJobSettings(unittest.TestCase):
                 ),
             },
             metadata_dir=str(RESOURCES_DIR / "metadata_dir"),
+            derivatives_dir=str(RESOURCES_DIR / "example_derivatives_dir"),
         )
         cls.example_upload_configs = example_upload_configs
 
@@ -66,6 +67,7 @@ class TestCheckDirectoriesJob(unittest.TestCase):
                 ),
             },
             metadata_dir=str(RESOURCES_DIR / "metadata_dir"),
+            derivatives_dir=str(RESOURCES_DIR / "example_derivatives_dir"),
         )
         cls.example_job = CheckDirectoriesJob(
             job_settings=JobSettings(
@@ -264,7 +266,7 @@ class TestCheckDirectoriesJob(unittest.TestCase):
         self.assertCountEqual(
             self.expected_list_of_directories_to_check, list_of_directories
         )
-        mock_logging_debug.assert_called_once()
+        self.assertEqual(2, mock_logging_debug.call_count)
 
     @patch("logging.debug")
     def test_get_list_of_directories_to_check_error(
