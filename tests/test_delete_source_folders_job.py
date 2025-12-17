@@ -303,6 +303,48 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         mock_rm_tree.assert_not_called()
         mock_log_debug.assert_called()
 
+    # Patch shutil.rmtree in every unit test
+    @patch("shutil.rmtree")
+    @patch(
+        "aind_data_upload_utils.delete_source_folders_job."
+        "DeleteSourceFoldersJob._remove_subdirectories"
+    )
+    @patch(
+        "aind_data_upload_utils.delete_source_folders_job."
+        "DeleteSourceFoldersJob._remove_directory"
+    )
+    @patch(
+        "aind_data_upload_utils.delete_source_folders_job."
+        "DeleteSourceFoldersJob._s3_check"
+    )
+    @patch("logging.debug")
+    def test_run_job_with_modality_filter(
+        self,
+        mock_log_debug: MagicMock,
+        mock_s3_check: MagicMock,
+        mock_remove_directory: MagicMock,
+        mock_remove_subdirectories: MagicMock,
+        mock_rm_tree: MagicMock,
+    ):
+        """Tests run_job method with modality filter"""
+        mock_s3_check.return_value = None
+        mock_remove_subdirectories.return_value = None
+        mock_remove_directory.return_value = None
+        updated_settings = self.example_job.job_settings.model_copy(
+            deep=True, update={"modalities_to_delete": ["ecephys"]}
+        )
+        job = DeleteSourceFoldersJob(job_settings=updated_settings)
+        job.run_job()
+        mock_remove_subdirectories.assert_called()
+        mock_remove_directory.assert_has_calls(
+            [
+                call(str(EPHYS_DIR)),
+            ]
+        )
+        # _remove_directory is mocked, so rmtree shouldn't be called
+        mock_rm_tree.assert_not_called()
+        mock_log_debug.assert_called()
+
 
 if __name__ == "__main__":
     unittest.main()

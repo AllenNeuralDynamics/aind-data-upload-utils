@@ -54,7 +54,13 @@ class JobSettings(BaseSettings):
     s3_location: str = Field(
         description="Will verify the s3_location exists first."
     )
-
+    modalities_to_delete: Optional[List[str]] = Field(
+        default=None,
+        description=(
+            "If not None, then will only delete the modality folders or the"
+            " derivatives folder if in this list."
+        ),
+    )
     # In addition to managing permissions, the parent directory
     # pattern is also hard-coded for extra security. We don't want
     # requests to remove anything outside this directory.
@@ -142,8 +148,12 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
             modality_abbr,
             modality_source,
         ) in dirs_to_del_configs.modality_sources.items():
-            source_dir = modality_source
-            directories_to_delete.append(Path(source_dir))
+            if (
+                self.job_settings.modalities_to_delete is None
+                or modality_abbr in self.job_settings.modalities_to_delete
+            ):
+                source_dir = modality_source
+                directories_to_delete.append(Path(source_dir))
         return directories_to_delete
 
     def run_job(self):
@@ -159,11 +169,17 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
             # Remove top-level folder
             self._remove_directory(folder.as_posix().rstrip("/"))
         derivatives_dir = self.job_settings.directories.derivatives_dir
-        if derivatives_dir is not None:
+        if derivatives_dir is not None and (
+            self.job_settings.modalities_to_delete is None
+            or "derivatives" in self.job_settings.modalities_to_delete
+        ):
             self._remove_directory(derivatives_dir)
         # Remove metadata_dir last since that might be in top level
         metadata_dir = self.job_settings.directories.metadata_dir
-        if metadata_dir is not None:
+        if (
+            metadata_dir is not None
+            and self.job_settings.modalities_to_delete is None
+        ):
             self._remove_directory(metadata_dir)
         job_end_time = time()
         execution_time = job_end_time - job_start_time
