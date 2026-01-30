@@ -262,6 +262,33 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         )
         self.assertEqual(3, len(captured.output))
 
+    @patch("shutil.rmtree")
+    @patch("boto3.client")
+    @patch("os.listdir")
+    def test_s3_check_modalities_to_delete_filter(
+        self,
+        mock_list_dir: MagicMock,
+        mock_boto_client: MagicMock,
+        mock_rm_tree: MagicMock,
+    ):
+        """Tests s3 check when modalities_to_delete filter is set"""
+        updated_settings = self.s3_check_job.job_settings.model_copy(
+            deep=True, update={"modalities_to_delete": ["ecephys"]}
+        )
+        job = DeleteSourceFoldersJob(job_settings=updated_settings)
+        mock_boto_client.return_value.list_objects_v2.return_value = (
+            self.example_s3_response
+        )
+        mock_list_dir.return_value = ["data_description.json"]
+        with self.assertLogs(level="INFO") as captured:
+            job._s3_check()
+        mock_rm_tree.assert_not_called()
+        self.assertIn(
+            "INFO:root:Modality filter set to only delete ['ecephys'].",
+            captured.output,
+        )
+        self.assertEqual(5, len(captured.output))
+
     # Patch shutil.rmtree in every unit test
     @patch("shutil.rmtree")
     @patch(
