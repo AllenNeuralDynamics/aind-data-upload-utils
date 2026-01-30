@@ -106,7 +106,12 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
         logging.info(f"Folders in S3: {s3_folders}.")
         local_md_files = []
         local_md_dir = self.job_settings.directories.metadata_dir
-        if local_md_dir is not None:
+        modalities_to_delete = self.job_settings.modalities_to_delete
+        if modalities_to_delete is not None:
+            logging.info(
+                f"Modality filter set to only delete {modalities_to_delete}."
+            )
+        if local_md_dir is not None and modalities_to_delete is None:
             md_files = os.listdir(local_md_dir)
             local_md_files = [f for f in md_files if f.endswith(".json")]
         files_in_both_places = set(s3_files).intersection(local_md_files)
@@ -120,7 +125,10 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
             )
         local_srcs = self.job_settings.directories.modality_sources
         local_dirs = set(local_srcs.keys())
-        if self.job_settings.directories.derivatives_dir is not None:
+        if (
+            self.job_settings.directories.derivatives_dir is not None
+            and modalities_to_delete is None
+        ):
             local_dirs.add("derivatives")
         dirs_in_both_places = set(s3_folders).intersection(local_dirs)
         dirs_locally_not_in_s3 = set(local_dirs).difference(
