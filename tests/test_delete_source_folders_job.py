@@ -231,14 +231,12 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
             self.example_s3_response
         )
         mock_list_dir.return_value = ["acquisition.json"]
-        with self.assertRaises(Exception) as e:
-            with self.assertLogs(level="INFO") as captured:
-                self.s3_check_job._s3_check()
-        self.assertIn("not found in S3!", str(e.exception))
+        with self.assertLogs(level="WARNING") as captured:
+            self.s3_check_job._s3_check()
+        self.assertEqual(1, len(captured.output))
         self.assertIn(
-            "INFO:root:Checking s3://example/abc_123.", captured.output
+            "not found in S3! {'acquisition.json'}", captured.output[0]
         )
-        self.assertEqual(3, len(captured.output))
 
     @patch("boto3.client")
     @patch("os.listdir")
