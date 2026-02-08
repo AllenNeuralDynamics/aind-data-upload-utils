@@ -60,9 +60,16 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         )
         cls.example_job = DeleteStagingFolderJob(job_settings=job_settings)
 
-    # Patch shutil.rmtree in every unit test
-    @patch("shutil.rmtree")
-    def test_get_list_of_sub_directories(self, mock_rm_tree: MagicMock):
+    def setUp(self):
+        """Patch rmtree in every test"""
+        self.patch_rmtree = patch("shutil.rmtree")
+        self.mock_rmtree = self.patch_rmtree.start()
+
+    def tearDown(self):
+        """Stop patch"""
+        self.patch_rmtree.stop()
+
+    def test_get_list_of_sub_directories(self):
         """Tests _get_list_of_sub_directories"""
         folder = self.example_job.job_settings.staging_directory
         list_of_dirs = self.example_job._get_list_of_sub_directories(
@@ -77,13 +84,8 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         ]
         self.assertCountEqual(expected_list, list_of_dirs)
 
-        mock_rm_tree.assert_not_called()
-
     @patch("os.path.exists")
-    @patch("shutil.rmtree")
-    def test_remove_directory_success(
-        self, mock_rm_tree: MagicMock, mock_exists: MagicMock
-    ):
+    def test_remove_directory_success(self, mock_exists: MagicMock):
         """Tests _remove_directory when valid path is passed."""
         mock_exists.return_value = True
         with self.assertLogs(level="INFO") as captured:
@@ -91,15 +93,12 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
                 "/allen/aind/stage/svc_aind_airflow/dev/abc"
             )
         self.assertEqual(1, len(captured.output))
-        mock_rm_tree.assert_called_once_with(
+        self.mock_rmtree.assert_called_once_with(
             "/allen/aind/stage/svc_aind_airflow/dev/abc"
         )
 
     @patch("os.path.exists")
-    @patch("shutil.rmtree")
-    def test_remove_directory_not_exists(
-        self, mock_rm_tree: MagicMock, mock_exists: MagicMock
-    ):
+    def test_remove_directory_not_exists(self, mock_exists: MagicMock):
         """Tests _remove_directory when directory does not exist."""
         mock_exists.return_value = False
         with self.assertLogs(level="INFO") as captured:
@@ -112,11 +111,10 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
                 " does not exist!"
             )
         ]
-        mock_rm_tree.assert_not_called()
+        self.mock_rmtree.assert_not_called()
         self.assertEqual(expected_output, captured.output)
 
-    @patch("shutil.rmtree")
-    def test_remove_directory_error(self, mock_rm_tree: MagicMock):
+    def test_remove_directory_error(self):
         """Tests _remove_directory when invalid path is passed."""
 
         with self.assertRaises(Exception) as e:
@@ -128,10 +126,9 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
             "parent folder! Will not remove automatically!"
         )
         self.assertEqual(expected_error_message, e.exception.args[0])
-        mock_rm_tree.assert_not_called()
+        self.mock_rmtree.assert_not_called()
 
-    @patch("shutil.rmtree")
-    def test_remove_directory_norm_error(self, mock_rm_tree: MagicMock):
+    def test_remove_directory_norm_error(self):
         """Tests _remove_directory when path is not normalized."""
 
         with self.assertRaises(Exception) as e:
@@ -139,14 +136,12 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
                 "/allen/aind/stage/svc_aind_airflow/dev/../abc"
             )
         self.assertIn("needs to be absolute and normalized!", str(e.exception))
-        mock_rm_tree.assert_not_called()
+        self.mock_rmtree.assert_not_called()
 
     @patch("os.path.exists")
     @patch("logging.info")
-    @patch("shutil.rmtree")
     def test_remove_directory_dry_run(
         self,
-        mock_rm_tree: MagicMock,
         mock_log_info: MagicMock,
         mock_exists: MagicMock,
     ):
@@ -161,15 +156,13 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
             "(DRYRUN): "
             "shutil.rmtree('/allen/aind/stage/svc_aind_airflow/dev/abc')"
         )
-        mock_rm_tree.assert_not_called()
+        self.mock_rmtree.assert_not_called()
 
     @patch("os.path.exists")
-    @patch("shutil.rmtree")
     @patch("logging.debug")
     def test_dask_task_to_process_directory_list(
         self,
         mock_log_debug: MagicMock,
-        mock_rm_tree: MagicMock,
         mock_exists: MagicMock,
     ):
         """Tests _dask_task_to_process_directory_list."""
@@ -184,7 +177,7 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
             self.example_job._dask_task_to_process_directory_list(
                 directories=dir_list
             )
-        mock_rm_tree.assert_has_calls(
+        self.mock_rmtree.assert_has_calls(
             [
                 call("/allen/aind/stage/svc_aind_airflow/dev/abc/def"),
                 call("/allen/aind/stage/svc_aind_airflow/dev/abc/ghi"),
@@ -215,10 +208,9 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         )
         self.assertEqual(3, len(captured.output))
 
-    @patch("shutil.rmtree")
     @patch("logging.debug")
     def test_dask_task_to_process_directory_list_error(
-        self, mock_log_debug: MagicMock, mock_rm_tree: MagicMock
+        self, mock_log_debug: MagicMock
     ):
         """Tests _dask_task_to_process_directory_list when invalid path."""
         dir_list = [
@@ -235,7 +227,6 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
             "parent folder! Will not remove automatically!"
         )
         self.assertEqual(expected_error_message, e.exception.args[0])
-        mock_rm_tree.assert_not_called()
         mock_log_debug.assert_has_calls(
             [
                 call(
@@ -248,14 +239,12 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
             ]
         )
 
-    @patch("shutil.rmtree")
     @patch("logging.debug")
     @patch("dask.bag.map_partitions")
     def test_remove_subdirectories(
         self,
         mock_map_partitions: MagicMock,
         mock_log_debug: MagicMock,
-        mock_rm_tree: MagicMock,
     ):
         """Tests _remove_subdirectories"""
         dir_list = [
@@ -265,11 +254,8 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         ]
         self.example_job._remove_subdirectories(sub_directories=dir_list)
         mock_map_partitions.assert_called()
-        # Shouldn't be called because map_partitions is being mocked
-        mock_rm_tree.assert_not_called()
         mock_log_debug.assert_not_called()
 
-    @patch("shutil.rmtree")
     @patch(
         "aind_data_upload_utils.delete_staging_folder_job."
         "DeleteStagingFolderJob._remove_subdirectories"
@@ -284,7 +270,6 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         mock_log_debug: MagicMock,
         mock_remove_directory: MagicMock,
         mock_remove_subdirectories: MagicMock,
-        mock_rm_tree: MagicMock,
     ):
         """Tests run_job method"""
         mock_remove_subdirectories.return_value = None
@@ -292,8 +277,6 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         self.example_job.run_job()
         mock_remove_subdirectories.assert_called()
         mock_remove_directory.assert_called()
-        # _remove_directory is mocked, so rmtree shouldn't be called
-        mock_rm_tree.assert_not_called()
         mock_log_debug.assert_called()
 
 

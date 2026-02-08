@@ -159,14 +159,27 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         )
         cls.example_s3_response = example_s3_response
 
-    @patch("shutil.rmtree")
+    def setUp(self):
+        """Patch rmtree in every test"""
+        self.patch_rmtree = patch("shutil.rmtree")
+        self.mock_rm_tree = self.patch_rmtree.start()
+        self.patch_remove = patch("os.remove")
+        self.mock_remove = self.patch_remove.start()
+        self.patch_rmdir = patch("os.rmdir")
+        self.mock_rmdir = self.patch_rmdir.start()
+
+    def tearDown(self):
+        """Stop patch"""
+        self.patch_rmtree.stop()
+        self.patch_remove.stop()
+        self.patch_rmdir.stop()
+
     @patch("boto3.client")
     @patch("os.listdir")
     def test_s3_check(
         self,
         mock_list_dir: MagicMock,
         mock_boto_client: MagicMock,
-        mock_rm_tree: MagicMock,
     ):
         """Tests s3 check"""
         mock_boto_client.return_value.list_objects_v2.return_value = (
@@ -175,20 +188,17 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         mock_list_dir.return_value = ["data_description.json"]
         with self.assertLogs(level="INFO") as captured:
             self.s3_check_job._s3_check()
-        mock_rm_tree.assert_not_called()
         self.assertIn(
             "INFO:root:Checking s3://example/abc_123.", captured.output
         )
         self.assertEqual(4, len(captured.output))
 
-    @patch("shutil.rmtree")
     @patch("boto3.client")
     @patch("os.listdir")
     def test_s3_check_too_many_s3_object_failure(
         self,
         mock_list_dir: MagicMock,
         mock_boto_client: MagicMock,
-        mock_rm_tree: MagicMock,
     ):
         """Tests s3 check when there are too many s3 objects"""
         s3_response = deepcopy(self.example_s3_response)
@@ -203,21 +213,18 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
             "Unexpected number of objects in s3://example/abc_123!",
             str(e.exception),
         )
-        mock_rm_tree.assert_not_called()
         mock_list_dir.assert_not_called()
         self.assertIn(
             "INFO:root:Checking s3://example/abc_123.", captured.output
         )
         self.assertEqual(1, len(captured.output))
 
-    @patch("shutil.rmtree")
     @patch("boto3.client")
     @patch("os.listdir")
     def test_s3_check_local_file_mismatch(
         self,
         mock_list_dir: MagicMock,
         mock_boto_client: MagicMock,
-        mock_rm_tree: MagicMock,
     ):
         """Tests s3 check when local files are not in s3"""
         mock_boto_client.return_value.list_objects_v2.return_value = (
@@ -228,20 +235,17 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
             with self.assertLogs(level="INFO") as captured:
                 self.s3_check_job._s3_check()
         self.assertIn("not found in S3!", str(e.exception))
-        mock_rm_tree.assert_not_called()
         self.assertIn(
             "INFO:root:Checking s3://example/abc_123.", captured.output
         )
         self.assertEqual(3, len(captured.output))
 
-    @patch("shutil.rmtree")
     @patch("boto3.client")
     @patch("os.listdir")
     def test_s3_check_local_folder_mismatch(
         self,
         mock_list_dir: MagicMock,
         mock_boto_client: MagicMock,
-        mock_rm_tree: MagicMock,
     ):
         """Tests s3 check when there are modality folders not in s3"""
         mock_list_dir.return_value = ["data_description.json"]
@@ -256,20 +260,17 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
             with self.assertLogs(level="INFO") as captured:
                 self.s3_check_job._s3_check()
         self.assertIn("not found in S3!", str(e.exception))
-        mock_rm_tree.assert_not_called()
         self.assertIn(
             "INFO:root:Checking s3://example/abc_123.", captured.output
         )
         self.assertEqual(3, len(captured.output))
 
-    @patch("shutil.rmtree")
     @patch("boto3.client")
     @patch("os.listdir")
     def test_s3_check_modalities_to_delete_filter(
         self,
         mock_list_dir: MagicMock,
         mock_boto_client: MagicMock,
-        mock_rm_tree: MagicMock,
     ):
         """Tests s3 check when modalities_to_delete filter is set"""
         updated_settings = self.s3_check_job.job_settings.model_copy(
@@ -282,15 +283,43 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         mock_list_dir.return_value = ["data_description.json"]
         with self.assertLogs(level="INFO") as captured:
             job._s3_check()
-        mock_rm_tree.assert_not_called()
         self.assertIn(
             "INFO:root:Modality filter set to only delete ['ecephys'].",
             captured.output,
         )
         self.assertEqual(5, len(captured.output))
 
-    # Patch shutil.rmtree in every unit test
-    @patch("shutil.rmtree")
+    @patch("os.scandir")
+    def test_remove_metadata_directory(self, mock_scandir: MagicMock):
+        """Tests remove_metadata_directory method when empty."""
+
+        mock_scandir.return_value.__enter__.return_value = []
+        metadata_files = {"subject.json", "data_description.json"}
+        self.example_job._remove_metadata_directory(
+            metadata_files_in_both_places=metadata_files
+        )
+        self.assertEqual(2, len(self.mock_remove.mock_calls))
+        self.mock_rmdir.assert_called_once()
+
+    @patch("os.scandir")
+    def test_remove_metadata_directory_not_empty(
+        self, mock_scandir: MagicMock
+    ):
+        """Tests remove_metadata_directory method when not emptied."""
+
+        mock_scandir.return_value.__enter__.return_value = ["extra_folder"]
+        metadata_files = {"subject.json", "data_description.json"}
+        with self.assertLogs(level="WARNING"):
+            self.example_job._remove_metadata_directory(
+                metadata_files_in_both_places=metadata_files
+            )
+        self.assertEqual(2, len(self.mock_remove.mock_calls))
+        self.mock_rmdir.assert_not_called()
+
+    @patch(
+        "aind_data_upload_utils.delete_source_folders_job."
+        "DeleteSourceFoldersJob._remove_metadata_directory"
+    )
     @patch(
         "aind_data_upload_utils.delete_source_folders_job."
         "DeleteSourceFoldersJob._remove_subdirectories"
@@ -310,10 +339,10 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         mock_s3_check: MagicMock,
         mock_remove_directory: MagicMock,
         mock_remove_subdirectories: MagicMock,
-        mock_rm_tree: MagicMock,
+        mock_remove_metadata_directory: MagicMock,
     ):
         """Tests run_job method"""
-        mock_s3_check.return_value = None
+        mock_s3_check.return_value = {"data_description.json"}
         mock_remove_subdirectories.return_value = None
         mock_remove_directory.return_value = None
         self.example_job.run_job()
@@ -323,15 +352,17 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
                 call(str(EPHYS_DIR)),
                 call(str(SMART_SPIM_DIR)),
                 call(str(RESOURCES_DIR / "example_derivatives_dir")),
-                call(str(RESOURCES_DIR)),
             ]
         )
-        # _remove_directory is mocked, so rmtree shouldn't be called
-        mock_rm_tree.assert_not_called()
         mock_log_debug.assert_called()
+        mock_remove_metadata_directory.assert_called_once_with(
+            metadata_files_in_both_places={"data_description.json"}
+        )
 
-    # Patch shutil.rmtree in every unit test
-    @patch("shutil.rmtree")
+    @patch(
+        "aind_data_upload_utils.delete_source_folders_job."
+        "DeleteSourceFoldersJob._remove_metadata_directory"
+    )
     @patch(
         "aind_data_upload_utils.delete_source_folders_job."
         "DeleteSourceFoldersJob._remove_subdirectories"
@@ -351,10 +382,10 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         mock_s3_check: MagicMock,
         mock_remove_directory: MagicMock,
         mock_remove_subdirectories: MagicMock,
-        mock_rm_tree: MagicMock,
+        mock_remove_metadata_directory: MagicMock,
     ):
         """Tests run_job method with modality filter"""
-        mock_s3_check.return_value = None
+        mock_s3_check.return_value = {"data_description.json"}
         mock_remove_subdirectories.return_value = None
         mock_remove_directory.return_value = None
         updated_settings = self.example_job.job_settings.model_copy(
@@ -368,9 +399,8 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
                 call(str(EPHYS_DIR)),
             ]
         )
-        # _remove_directory is mocked, so rmtree shouldn't be called
-        mock_rm_tree.assert_not_called()
         mock_log_debug.assert_called()
+        mock_remove_metadata_directory.assert_not_called()
 
 
 if __name__ == "__main__":

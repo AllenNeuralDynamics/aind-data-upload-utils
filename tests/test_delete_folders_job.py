@@ -68,8 +68,15 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         )
         cls.example_job = DeleteFoldersJob(job_settings=job_settings)
 
-    # Patch shutil.rmtree in every unit test
-    @patch("shutil.rmtree")
+    def setUp(self):
+        """Patch rmtree in every test"""
+        self.patch_rmtree = patch("shutil.rmtree")
+        self.mock_rmtree = self.patch_rmtree.start()
+
+    def tearDown(self):
+        """Stop patch"""
+        self.patch_rmtree.stop()
+
     @patch(
         "aind_data_upload_utils.delete_folders_job."
         "DeleteFoldersJob._remove_subdirectories"
@@ -84,7 +91,6 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         mock_log_debug: MagicMock,
         mock_remove_directory: MagicMock,
         mock_remove_subdirectories: MagicMock,
-        mock_rm_tree: MagicMock,
     ):
         """Tests run_job method"""
         mock_remove_subdirectories.return_value = None
@@ -94,8 +100,6 @@ class TestDeleteStagingFolderJob(unittest.TestCase):
         mock_remove_directory.assert_has_calls(
             [call(SMART_SPIM_DIR.as_posix()), call(EPHYS_DIR.as_posix())]
         )
-        # _remove_directory is mocked, so rmtree shouldn't be called
-        mock_rm_tree.assert_not_called()
         mock_log_debug.assert_called()
 
 

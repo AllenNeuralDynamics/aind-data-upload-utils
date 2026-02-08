@@ -9,7 +9,7 @@ import re
 import sys
 from pathlib import Path
 from time import time
-from typing import ClassVar, Dict, List, Optional, Union
+from typing import ClassVar, Dict, List, Optional, Set, Union
 from urllib.parse import urlparse
 
 import boto3
@@ -83,7 +83,7 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
         """
         self.job_settings = job_settings
 
-    def _s3_check(self) -> None:
+    def _s3_check(self) -> Set[str]:
         """Check that s3 obj exists with expected subdirectories and files."""
         logging.info(f"Checking {self.job_settings.s3_location}.")
         s3_location = self.job_settings.s3_location
@@ -119,7 +119,7 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
             files_in_both_places
         )
         if files_locally_not_in_s3 != set():
-            raise Exception(
+            logging.warning(
                 f"There are files in {local_md_dir} not found in S3! "
                 f"{files_locally_not_in_s3}"
             )
@@ -140,6 +140,7 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
                 f"not found in S3! {dirs_locally_not_in_s3}"
             )
         logging.info(f"Finished checking {self.job_settings.s3_location}.")
+        return files_in_both_places
 
     def _get_list_of_modality_directories(self) -> List[Union[Path, str]]:
         """
@@ -164,11 +165,31 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
                 directories_to_delete.append(Path(source_dir))
         return directories_to_delete
 
+    def _remove_metadata_directory(
+        self, metadata_files_in_both_places: Set[str]
+    ):
+        """Removes local metadata directory."""
+        metadata_dir = self.job_settings.directories.metadata_dir
+        for metadata_file in metadata_files_in_both_places:
+            local_file = Path(metadata_dir) / metadata_file
+            os.remove(local_file)
+        is_empty = True
+        with os.scandir(metadata_dir) as it:
+            if any(it):
+                is_empty = False
+        if not is_empty:
+            logging.warning(
+                f"There are extra files or folders found in {metadata_dir}! "
+                f"Will not auto-delete!"
+            )
+        else:
+            os.rmdir(metadata_dir)
+
     def run_job(self):
         """Main job runner. Walks num_of_dir_levels deep and removes all
         subdirectories in that level. Then removes top directory."""
         job_start_time = time()
-        self._s3_check()
+        metadata_files_in_both_places = self._s3_check()
         folders_to_remove = self._get_list_of_modality_directories()
         for folder in folders_to_remove:
             # Remove batches of subdirectories in parallel
@@ -188,7 +209,9 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
             metadata_dir is not None
             and self.job_settings.modalities_to_delete is None
         ):
-            self._remove_directory(metadata_dir)
+            self._remove_metadata_directory(
+                metadata_files_in_both_places=metadata_files_in_both_places
+            )
         job_end_time = time()
         execution_time = job_end_time - job_start_time
         logging.debug(f"Task took {execution_time} seconds")
