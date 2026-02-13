@@ -112,6 +112,9 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
             num_of_dir_levels=1,
             s3_location="s3://example/abc_123",
         )
+        actual_run_job_settings = job_settings.model_copy(
+            deep=True, update={"dry_run": False}
+        )
         example_s3_response = {
             "ResponseMetadata": dict(),
             "IsTruncated": False,
@@ -156,6 +159,9 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         cls.example_job = DeleteSourceFoldersJob(job_settings=job_settings)
         cls.s3_check_job = DeleteSourceFoldersJob(
             job_settings=s3_check_job_settings
+        )
+        cls.actual_run_job = DeleteSourceFoldersJob(
+            job_settings=actual_run_job_settings
         )
         cls.example_s3_response = example_s3_response
 
@@ -293,9 +299,11 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
 
         mock_scandir.return_value.__enter__.return_value = []
         metadata_files = {"subject.json", "data_description.json"}
-        self.example_job._remove_metadata_directory(
-            metadata_files_in_both_places=metadata_files
-        )
+        with self.assertLogs(level="INFO") as captured:
+            self.actual_run_job._remove_metadata_directory(
+                metadata_files_in_both_places=metadata_files
+            )
+        self.assertEqual(3, len(captured.output))
         self.assertEqual(2, len(self.mock_remove.mock_calls))
         self.mock_rmdir.assert_called_once()
 
@@ -308,11 +316,23 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         mock_scandir.return_value.__enter__.return_value = ["extra_folder"]
         metadata_files = {"subject.json", "data_description.json"}
         with self.assertLogs(level="WARNING"):
-            self.example_job._remove_metadata_directory(
+            self.actual_run_job._remove_metadata_directory(
                 metadata_files_in_both_places=metadata_files
             )
         self.assertEqual(2, len(self.mock_remove.mock_calls))
         self.mock_rmdir.assert_not_called()
+
+    @patch("os.scandir")
+    def test_remove_metadata_directory_dry_run(self, mock_scandir: MagicMock):
+        """Tests remove_metadata_directory method when dry run set."""
+
+        mock_scandir.return_value.__enter__.return_value = []
+        metadata_files = {"subject.json", "data_description.json"}
+        with self.assertLogs(level="INFO") as captured:
+            self.example_job._remove_metadata_directory(
+                metadata_files_in_both_places=metadata_files
+            )
+        self.assertEqual(3, len(captured.output))
 
     @patch(
         "aind_data_upload_utils.delete_source_folders_job."
