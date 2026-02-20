@@ -41,37 +41,28 @@ class TestWebhookNotificationJob(unittest.TestCase):
         with self.assertLogs(level="DEBUG") as captured:
             result = job.parse_csv()
 
-        # Test the structure of the returned data
         self.assertIsInstance(result, dict)
 
-        # With user2@example.com excluded, we should have user1 and user3
         expected_users = {"user1@example.com", "user3@example.com"}
         self.assertEqual(set(result.keys()), expected_users)
 
-        # user1@example.com should have 2 capsules (rows 1 and 3)
         self.assertEqual(len(result["user1@example.com"]), 2)
 
-        # user3@example.com should have 1 capsule (row 4)
         self.assertEqual(len(result["user3@example.com"]), 1)
 
-        # Check capsule data structure
         for user_email, capsules in result.items():
             self.assertIsInstance(capsules, list)
-            # Each user should have at least one capsule
             self.assertGreater(len(capsules), 0)
             for capsule in capsules:
                 self.assertIn("capsule_url", capsule)
                 self.assertIsInstance(capsule["capsule_url"], str)
-                # Should be a valid URL
                 self.assertTrue(capsule["capsule_url"].startswith("http"))
 
-        # Verify that debug log contains metadata about files processed
         debug_logs = [log for log in captured.output if "Exclude items" in log]
         self.assertEqual(len(debug_logs), 1)
 
     def test_parse_csv_exclude_by_capsule_url(self):
         """Tests parse_csv method excluding by capsule URL."""
-        # Create a temporary exclude file with a capsule URL
         exclude_capsule_file = RESOURCES_DIR / "exclude_capsule.txt"
         with open(exclude_capsule_file, 'w') as f:
             f.write("https://codeocean.com/capsule/12345")
@@ -86,13 +77,10 @@ class TestWebhookNotificationJob(unittest.TestCase):
 
             result = job.parse_csv()
 
-            # Should exclude the first row with capsule 12345, leaving user1
-            # with 1 capsule and user2, user3
             self.assertIn("user1@example.com", result)
             self.assertIn("user2@example.com", result)
             self.assertIn("user3@example.com", result)
 
-            # user1 should have only 1 capsule left (the second one)
             self.assertEqual(len(result["user1@example.com"]), 1)
             self.assertEqual(
                 result["user1@example.com"][0]["capsule_url"],
@@ -100,7 +88,6 @@ class TestWebhookNotificationJob(unittest.TestCase):
             )
 
         finally:
-            # Clean up
             if exclude_capsule_file.exists():
                 exclude_capsule_file.unlink()
 
@@ -116,14 +103,12 @@ class TestWebhookNotificationJob(unittest.TestCase):
 
         result = job.parse_csv()
 
-        # Should include all users when no exclude file exists
         self.assertIsInstance(result, dict)
         self.assertGreater(len(result), 0)
 
     @patch('requests.post')
     def test_send_webhook_notifications_success(self, mock_post: MagicMock):
         """Tests successful webhook notifications."""
-        # Mock successful response
         mock_response = MagicMock()
         mock_response.raise_for_status.return_value = None
         mock_post.return_value = mock_response
@@ -148,10 +133,8 @@ class TestWebhookNotificationJob(unittest.TestCase):
         with self.assertLogs(level="INFO") as captured:
             job.send_webhook_notifications(test_data)
 
-        # Check that requests.post was called for each user
         self.assertEqual(mock_post.call_count, 2)
 
-        # Check log messages for successful notifications
         success_logs = [
             log for log in captured.output
             if "Successfully sent notification" in log
@@ -161,7 +144,6 @@ class TestWebhookNotificationJob(unittest.TestCase):
     @patch('requests.post')
     def test_send_webhook_notifications_failure(self, mock_post: MagicMock):
         """Tests webhook notification failures."""
-        # Mock failed response with the correct exception type
         import requests
         mock_post.side_effect = requests.exceptions.RequestException(
             "Network error"
@@ -183,7 +165,6 @@ class TestWebhookNotificationJob(unittest.TestCase):
         with self.assertLogs(level="ERROR") as captured:
             job.send_webhook_notifications(test_data)
 
-        # Check that error was logged
         error_logs = [
             log for log in captured.output
             if "Failed to send notification" in log
@@ -193,7 +174,6 @@ class TestWebhookNotificationJob(unittest.TestCase):
     @patch('requests.post')
     def test_run_job_integration(self, mock_post: MagicMock):
         """Tests the complete run_job workflow."""
-        # Mock successful response
         mock_response = MagicMock()
         mock_response.raise_for_status.return_value = None
         mock_post.return_value = mock_response
@@ -208,7 +188,6 @@ class TestWebhookNotificationJob(unittest.TestCase):
         with self.assertLogs(level="INFO") as captured:
             job.run_job()
 
-        # Check that the job completed successfully
         start_log = any(
             "Starting webhook notification job" in log
             for log in captured.output
@@ -220,7 +199,6 @@ class TestWebhookNotificationJob(unittest.TestCase):
         self.assertTrue(start_log)
         self.assertTrue(end_log)
 
-        # Verify webhook calls were made
         self.assertGreater(mock_post.call_count, 0)
 
 
