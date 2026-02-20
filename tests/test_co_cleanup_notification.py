@@ -1,11 +1,11 @@
-"""Tests co_cleanup_notification module"""
+"""Tests trigger_co_cleanup_notification module"""
 
 import os
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from aind_data_upload_utils.co_cleanup_notification import (
+from aind_data_upload_utils.trigger_co_cleanup_notification import (
     WebhookNotificationJob,
     JobSettings,
 )
