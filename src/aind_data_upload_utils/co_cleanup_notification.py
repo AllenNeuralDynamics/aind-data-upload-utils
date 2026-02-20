@@ -4,13 +4,12 @@ Job to parse CSV data and send webhook notifications.
 
 import argparse
 import csv
-import json
 import logging
 import os
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Union
 
 import requests
 from pydantic import Field
@@ -28,7 +27,9 @@ class JobSettings(BaseSettings):
         ..., description="Path to the CSV file to parse."
     )
     exclude_list_file: Union[Path, str] = Field(
-        ..., description="Path to the plain text file containing excluded usernames or capsule URLs (one per line)."
+        ...,
+        description="Path to the plain text file containing excluded "
+        "usernames or capsule URLs (one per line)."
     )
     webhook_url: str = Field(
         ..., description="Webhook URL to send notifications to."
@@ -51,11 +52,10 @@ class WebhookNotificationJob:
     def parse_csv(self) -> Dict[str, List[Dict[str, str]]]:
         """
         Parses the CSV file and groups capsule URLs by user email.
-        
+
         Returns
         -------
         Dict[str, List[Dict[str, str]]]
-            Dictionary with user emails as keys and lists of capsule data as values.
         """
         # Read exclude list
         exclude_items = set()
@@ -68,55 +68,59 @@ class WebhookNotificationJob:
                         item.strip() for item in exclude_content.split('\n')
                         if item.strip()
                     }
-        
+
         logging.debug(f"Exclude items: {exclude_items}")
-        
+
         # Parse CSV file
         user_data = defaultdict(list)
         csv_file_path = Path(self.job_settings.csv_file)
-        
+
         with open(csv_file_path, 'r', encoding='utf-8') as f:
             csv_reader = csv.DictReader(f)
             for row_index, row in enumerate(csv_reader):
                 user_email = row["user_email"]
                 capsule_url = row["capsule_url"]
-                
+
                 # Check if user_email or capsule_url should be excluded
                 if user_email in exclude_items or capsule_url in exclude_items:
-                    logging.info(f"Excluding row {row_index + 1}: {user_email} - {capsule_url}")
+                    logging.info(
+                        f"Excluding row {row_index + 1}: {user_email} - "
+                        f"{capsule_url}"
+                        )
                     continue
-                
+
                 capsule_data = {
                     "capsule_url": capsule_url
                 }
                 user_data[user_email].append(capsule_data)
-        
+
         logging.debug(f"Parsed data for {len(user_data)} users")
         return dict(user_data)
 
-    def send_webhook_notifications(self, user_data: Dict[str, List[Dict[str, str]]]) -> None:
+    def send_webhook_notifications(
+            self, user_data: Dict[str, List[Dict[str, str]]]
+            ) -> None:
         """
         Sends POST requests to the webhook endpoint.
-        
+
         Parameters
         ----------
         user_data: Dict[str, List[Dict[str, str]]]
-            Dictionary with user emails as keys and lists of capsule data as values.
         """
         webhook_url = self.job_settings.webhook_url
-        
+
         for user_email, capsules in user_data.items():
             table_rows = ""
             for capsule in capsules:
                 capsule_url = capsule["capsule_url"]
                 table_rows += f"{capsule_url}<br>"
-            
+
             html_table = f"<body>{table_rows}</body>"
             payload = {
                 "user_email": user_email,
                 "capsule_urls": html_table
             }
-            
+
             try:
                 response = requests.post(
                     webhook_url,
@@ -126,20 +130,24 @@ class WebhookNotificationJob:
                     timeout=30
                 )
                 response.raise_for_status()
-                logging.info(f"Successfully sent notification for {user_email}")
+                logging.info(
+                    f"Successfully sent notification for {user_email}"
+                    )
             except requests.exceptions.RequestException as e:
-                logging.error(f"Failed to send notification for {user_email}: {e}")
+                logging.error(
+                    f"Failed to send notification for {user_email}: {e}"
+                    )
 
     def run_job(self) -> None:
         """Main job runner."""
         logging.info("Starting webhook notification job")
-        
+
         # Parse CSV data
         user_data = self.parse_csv()
-        
+
         # Send notifications
         self.send_webhook_notifications(user_data)
-        
+
         logging.info("Webhook notification job completed")
 
 
