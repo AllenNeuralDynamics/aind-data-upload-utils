@@ -28,7 +28,7 @@ class JobSettings(BaseSettings):
         ..., description="Path to the CSV file to parse."
     )
     exclude_list_file: Union[Path, str] = Field(
-        ..., description="Path to the plain text file containing excluded row numbers."
+        ..., description="Path to the plain text file containing excluded usernames or capsule URLs (one per line)."
     )
     webhook_url: str = Field(
         ..., description="Webhook URL to send notifications to."
@@ -58,18 +58,18 @@ class WebhookNotificationJob:
             Dictionary with user emails as keys and lists of capsule data as values.
         """
         # Read exclude list
-        exclude_rows = set()
+        exclude_items = set()
         exclude_file_path = Path(self.job_settings.exclude_list_file)
         if exclude_file_path.exists():
             with open(exclude_file_path, 'r', encoding='utf-8') as f:
                 exclude_content = f.read().strip()
                 if exclude_content:
-                    exclude_rows = {
-                        int(row.strip()) - 1 for row in exclude_content.split(',')
-                        if row.strip().isdigit()
+                    exclude_items = {
+                        item.strip() for item in exclude_content.split('\n')
+                        if item.strip()
                     }
         
-        logging.debug(f"Exclude rows: {exclude_rows}")
+        logging.debug(f"Exclude items: {exclude_items}")
         
         # Parse CSV file
         user_data = defaultdict(list)
@@ -78,14 +78,16 @@ class WebhookNotificationJob:
         with open(csv_file_path, 'r', encoding='utf-8') as f:
             csv_reader = csv.DictReader(f)
             for row_index, row in enumerate(csv_reader):
-                if row_index in exclude_rows:
-                    user_email = row.get('user_email', 'N/A')
-                    logging.info(f"Excluding row {row_index + 1}: {user_email}")
+                user_email = row["user_email"]
+                capsule_url = row["capsule_url"]
+                
+                # Check if user_email or capsule_url should be excluded
+                if user_email in exclude_items or capsule_url in exclude_items:
+                    logging.info(f"Excluding row {row_index + 1}: {user_email} - {capsule_url}")
                     continue
                 
-                user_email = row["user_email"]
                 capsule_data = {
-                    "capsule_url": row["capsule_url"]
+                    "capsule_url": capsule_url
                 }
                 user_data[user_email].append(capsule_data)
         

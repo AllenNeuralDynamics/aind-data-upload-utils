@@ -44,17 +44,15 @@ class TestWebhookNotificationJob(unittest.TestCase):
         # Test the structure of the returned data
         self.assertIsInstance(result, dict)
         
-        # Instead of hardcoding expected users, let's verify the exclusion logic worked
-        # First, parse without exclusions to see what we should have had
-        job_no_exclude = WebhookNotificationJob(JobSettings(
-            csv_file=CSV_FILE,
-            exclude_list_file=RESOURCES_DIR / "empty_exclude.txt",  # Empty exclude file
-            webhook_url="https://webhook.site/test"
-        ))
+        # With user2@example.com excluded, we should have user1 and user3
+        expected_users = {"user1@example.com", "user3@example.com"}
+        self.assertEqual(set(result.keys()), expected_users)
         
-        # Create an empty exclude file temporarily or check if exclusion actually happened
-        # For now, just verify we got some results and structure is correct
-        self.assertGreaterEqual(len(result), 0)  # Should have at least some users (unless all excluded)
+        # user1@example.com should have 2 capsules (rows 1 and 3)
+        self.assertEqual(len(result["user1@example.com"]), 2)
+        
+        # user3@example.com should have 1 capsule (row 4)
+        self.assertEqual(len(result["user3@example.com"]), 1)
         
         # Check capsule data structure
         for user_email, capsules in result.items():
@@ -66,8 +64,39 @@ class TestWebhookNotificationJob(unittest.TestCase):
                 self.assertTrue(capsule["capsule_url"].startswith("http"))  # Should be a valid URL
 
         # Verify that debug log contains metadata about files processed
-        debug_logs = [log for log in captured.output if "Exclude rows" in log]
+        debug_logs = [log for log in captured.output if "Exclude items" in log]
         self.assertEqual(len(debug_logs), 1)
+
+    def test_parse_csv_exclude_by_capsule_url(self):
+        """Tests parse_csv method excluding by capsule URL."""
+        # Create a temporary exclude file with a capsule URL
+        exclude_capsule_file = RESOURCES_DIR / "exclude_capsule.txt"
+        with open(exclude_capsule_file, 'w') as f:
+            f.write("https://codeocean.com/capsule/12345")
+        
+        try:
+            job_settings = JobSettings(
+                csv_file=CSV_FILE,
+                exclude_list_file=exclude_capsule_file,
+                webhook_url="https://webhook.site/test"
+            )
+            job = WebhookNotificationJob(job_settings=job_settings)
+            
+            result = job.parse_csv()
+            
+            # Should exclude the first row with capsule 12345, leaving user1 with 1 capsule and user2, user3
+            self.assertIn("user1@example.com", result)
+            self.assertIn("user2@example.com", result)
+            self.assertIn("user3@example.com", result)
+            
+            # user1 should have only 1 capsule left (the second one)
+            self.assertEqual(len(result["user1@example.com"]), 1)
+            self.assertEqual(result["user1@example.com"][0]["capsule_url"], "https://codeocean.com/capsule/34567")
+        
+        finally:
+            # Clean up
+            if exclude_capsule_file.exists():
+                exclude_capsule_file.unlink()
 
     def test_parse_csv_without_excludes(self):
         """Tests parse_csv method when exclude file doesn't exist."""
