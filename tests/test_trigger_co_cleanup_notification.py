@@ -3,10 +3,12 @@ import os
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
 import requests
+
 from aind_data_upload_utils.trigger_co_cleanup_notification import (
-    WebhookNotificationJob,
     JobSettings,
+    WebhookNotificationJob,
 )
 
 RESOURCES_DIR = Path(os.path.dirname(os.path.realpath(__file__))) / "resources"

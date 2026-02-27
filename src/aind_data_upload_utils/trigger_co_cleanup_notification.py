@@ -17,7 +17,6 @@ import requests
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-
 LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
 logging.basicConfig(level=LOG_LEVEL)
 
