@@ -20,7 +20,8 @@ dependencies = [
     'dask',
     'pydantic>2.9',
     'pydantic-settings>=2.8',
-    'boto3'
+    'boto3',
+    'requests'
 ]
 
 [project.optional-dependencies]
