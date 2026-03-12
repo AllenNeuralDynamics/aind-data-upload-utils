@@ -33,11 +33,13 @@ class TestJobSettings(unittest.TestCase):
         job_settings = JobSettings(
             directories=DirectoriesToDeleteConfigs(
                 modality_sources={
-                    "ecephys": str(EPHYS_DIR),
-                    "SmartSPIM": str(SMART_SPIM_DIR),
+                    "ecephys": EPHYS_DIR.as_posix(),
+                    "SmartSPIM": SMART_SPIM_DIR.as_posix(),
                 },
-                metadata_dir=str(RESOURCES_DIR),
-                derivatives_dir=str(RESOURCES_DIR / "example_derivatives_dir"),
+                metadata_dir=RESOURCES_DIR.as_posix(),
+                derivatives_dir=(
+                    RESOURCES_DIR / "example_derivatives_dir"
+                ).as_posix(),
             ),
             s3_location="s3://example/abc_123",
         )
@@ -51,7 +53,7 @@ class TestJobSettings(unittest.TestCase):
 
         job_settings = JobSettings(
             directories=DirectoriesToDeleteConfigs(
-                modality_sources={"SmartSPIM": str(SMART_SPIM_DIR)}
+                modality_sources={"SmartSPIM": SMART_SPIM_DIR.as_posix()}
             ),
             s3_location="s3://example/abc_123",
         )
@@ -92,10 +94,12 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         s3_check_job_settings = JobSettings(
             directories=DirectoriesToDeleteConfigs(
                 modality_sources={
-                    "ecephys": str(EPHYS_DIR),
+                    "ecephys": EPHYS_DIR.as_posix(),
                 },
-                metadata_dir=str(RESOURCES_DIR),
-                derivatives_dir=str(RESOURCES_DIR / "example_derivatives_dir"),
+                metadata_dir=RESOURCES_DIR.as_posix(),
+                derivatives_dir=(
+                    RESOURCES_DIR / "example_derivatives_dir"
+                ).as_posix(),
             ),
             num_of_dir_levels=1,
             s3_location="s3://example/abc_123",
@@ -103,11 +107,13 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         job_settings = JobSettings(
             directories=DirectoriesToDeleteConfigs(
                 modality_sources={
-                    "ecephys": str(EPHYS_DIR),
-                    "SmartSPIM": str(SMART_SPIM_DIR),
+                    "ecephys": EPHYS_DIR.as_posix(),
+                    "SmartSPIM": SMART_SPIM_DIR.as_posix(),
                 },
-                metadata_dir=str(RESOURCES_DIR),
-                derivatives_dir=str(RESOURCES_DIR / "example_derivatives_dir"),
+                metadata_dir=RESOURCES_DIR.as_posix(),
+                derivatives_dir=(
+                    RESOURCES_DIR / "example_derivatives_dir"
+                ).as_posix(),
             ),
             num_of_dir_levels=1,
             s3_location="s3://example/abc_123",
@@ -367,9 +373,9 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         mock_remove_subdirectories.assert_called()
         mock_remove_directory.assert_has_calls(
             [
-                call(str(EPHYS_DIR)),
-                call(str(SMART_SPIM_DIR)),
-                call(str(RESOURCES_DIR / "example_derivatives_dir")),
+                call(EPHYS_DIR.as_posix()),
+                call(SMART_SPIM_DIR.as_posix()),
+                call((RESOURCES_DIR / "example_derivatives_dir").as_posix()),
             ]
         )
         mock_log_debug.assert_called()
@@ -414,7 +420,7 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         mock_remove_subdirectories.assert_called()
         mock_remove_directory.assert_has_calls(
             [
-                call(str(EPHYS_DIR)),
+                call(EPHYS_DIR.as_posix()),
             ]
         )
         mock_log_debug.assert_called()

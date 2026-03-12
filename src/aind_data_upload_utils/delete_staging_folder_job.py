@@ -8,7 +8,7 @@ import os
 import re
 import shutil
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from time import time
 from typing import ClassVar, List
 
@@ -104,8 +104,11 @@ class DeleteStagingFolderJob:
 
         """
         # Verify directory to remove is under parent directory
-        norm_path = os.path.normpath(directory)
-        if norm_path != directory or not os.path.isabs(directory):
+        norm_path = Path(os.path.normpath(directory)).as_posix()
+        if (
+            norm_path != directory
+            or not PurePosixPath(directory).is_absolute()
+        ):
             raise Exception(
                 f"{directory} needs to be absolute and normalized!"
             )

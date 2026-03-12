@@ -253,7 +253,7 @@ class WebhookNotificationJob:
                 response.raise_for_status()
                 logging.info(
                     f"Successfully sent notification for {user_email}"
-                    )
+                )
             except requests.exceptions.RequestException as e:
                 logging.error(
                     f"Failed to send notification for {user_email}: {e}"
