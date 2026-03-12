@@ -1,4 +1,5 @@
 """Tests trigger_co_cleanup_notification module"""
+
 import os
 import unittest
 from pathlib import Path
@@ -43,9 +44,7 @@ class TestWebhookNotificationJob(unittest.TestCase):
         self.assertTrue(
             self.example_job._is_s3_uri("s3://bucket/folder/file.csv")
         )
-        self.assertFalse(
-            self.example_job._is_s3_uri("/local/path/file.csv")
-        )
+        self.assertFalse(self.example_job._is_s3_uri("/local/path/file.csv"))
         self.assertFalse(self.example_job._is_s3_uri("file.csv"))
         # Test _parse_s3_uri method
         bucket, key = self.example_job._parse_s3_uri("s3://my-bucket/file.csv")
@@ -80,7 +79,7 @@ class TestWebhookNotificationJob(unittest.TestCase):
         s3_job_settings = JobSettings(
             csv_file=CSV_FILE,
             exclude_list_file="s3://test-bucket/exclude.txt",
-            webhook_url="https://webhook.site/test"
+            webhook_url="https://webhook.site/test",
         )
         s3_job = WebhookNotificationJob(job_settings=s3_job_settings)
 
@@ -102,8 +101,7 @@ class TestWebhookNotificationJob(unittest.TestCase):
             self.assertIn("user_email", row)
             self.assertIn("capsule_url", row)
         debug_logs = [
-            log for log in captured.output
-            if "Read" in log and "rows" in log
+            log for log in captured.output if "Read" in log and "rows" in log
         ]
         self.assertEqual(len(debug_logs), 1)
 
@@ -124,7 +122,7 @@ class TestWebhookNotificationJob(unittest.TestCase):
         s3_job_settings = JobSettings(
             csv_file="s3://test-bucket/data.csv",
             exclude_list_file=EXCLUDE_FILE,
-            webhook_url="https://webhook.site/test"
+            webhook_url="https://webhook.site/test",
         )
         s3_job = WebhookNotificationJob(job_settings=s3_job_settings)
 
@@ -162,9 +160,7 @@ class TestWebhookNotificationJob(unittest.TestCase):
         self.assertIn("user3@example.com", user_data)
         self.assertEqual(len(user_data["user1@example.com"]), 2)
         self.assertEqual(len(user_data["user3@example.com"]), 1)
-        debug_logs = [
-            log for log in captured.output if "Grouped data" in log
-        ]
+        debug_logs = [log for log in captured.output if "Grouped data" in log]
         self.assertEqual(len(debug_logs), 1)
 
     def test_exclude_list_integration(self):
@@ -201,7 +197,7 @@ class TestWebhookNotificationJob(unittest.TestCase):
 
         test_data = {
             "user1@example.com": [{"capsule_url": "https://example.com/1"}],
-            "user2@example.com": [{"capsule_url": "https://example.com/2"}]
+            "user2@example.com": [{"capsule_url": "https://example.com/2"}],
         }
         with self.assertLogs(level="INFO") as captured:
             self.example_job.send_webhook_notifications(test_data)
