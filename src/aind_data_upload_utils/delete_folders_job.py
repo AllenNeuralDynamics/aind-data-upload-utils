@@ -4,7 +4,6 @@ Module to handle deleting folders using dask
 
 import argparse
 import logging
-import os
 import re
 import sys
 from pathlib import Path
@@ -18,9 +17,6 @@ from pydantic_settings import BaseSettings
 from aind_data_upload_utils.delete_staging_folder_job import (
     DeleteStagingFolderJob,
 )
-
-LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
-logging.basicConfig(level=LOG_LEVEL)
 
 
 class JobSettings(BaseSettings):
@@ -88,12 +84,10 @@ if __name__ == "__main__":
         "--job-settings",
         required=False,
         type=str,
-        help=(
-            r"""
+        help=(r"""
             Instead of init args the job settings can optionally be passed in
             as a json string in the command line.
-            """
-        ),
+            """),
     )
     cli_args = parser.parse_args(sys_args)
     main_job_settings = JobSettings.model_validate_json(cli_args.job_settings)

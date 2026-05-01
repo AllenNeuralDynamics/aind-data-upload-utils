@@ -5,7 +5,6 @@ Job to parse CSV data and send webhook notifications.
 import argparse
 import csv
 import logging
-import os
 import sys
 from collections import defaultdict
 from io import StringIO
@@ -16,9 +15,6 @@ import boto3
 import requests
 from pydantic import Field
 from pydantic_settings import BaseSettings
-
-LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
-logging.basicConfig(level=LOG_LEVEL)
 
 
 class JobSettings(BaseSettings):

@@ -9,9 +9,6 @@ from typing import List, Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-logging.basicConfig(level=LOG_LEVEL)
-
 
 class JobSettings(
     BaseSettings, cli_parse_args=True, cli_ignore_unknown_args=True
