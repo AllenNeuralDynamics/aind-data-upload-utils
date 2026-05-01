@@ -4,16 +4,12 @@ Module to check that certain metadata files exist and are in valid format.
 
 import argparse
 import json
-import logging
-import os
 import sys
 from pathlib import Path
 from typing import Set, Tuple, Union
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
-
-
 
 
 class JobSettings(BaseSettings):
@@ -115,12 +111,10 @@ if __name__ == "__main__":
         "--job-settings",
         required=False,
         type=str,
-        help=(
-            r"""
+        help=(r"""
             Instead of init args the job settings can optionally be passed in
             as a json string in the command line.
-            """
-        ),
+            """),
     )
     cli_args = parser.parse_args(sys_args)
     main_job_settings = JobSettings.model_validate_json(cli_args.job_settings)

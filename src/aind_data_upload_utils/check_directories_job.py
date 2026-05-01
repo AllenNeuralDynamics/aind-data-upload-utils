@@ -17,8 +17,6 @@ from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
 
 
-
-
 class DirectoriesToCheckConfigs(BaseModel):
     """Basic model needed from BasicUploadConfigs"""
 
@@ -204,12 +202,10 @@ if __name__ == "__main__":
         "--job-settings",
         required=False,
         type=str,
-        help=(
-            r"""
+        help=(r"""
             Instead of init args the job settings can optionally be passed in
             as a json string in the command line.
-            """
-        ),
+            """),
     )
     cli_args = parser.parse_args(sys_args)
     main_job_settings = JobSettings.model_validate_json(cli_args.job_settings)

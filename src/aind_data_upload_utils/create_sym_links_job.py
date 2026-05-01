@@ -10,8 +10,6 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
-
-
 class JobSettings(
     BaseSettings, cli_parse_args=True, cli_ignore_unknown_args=True
 ):
