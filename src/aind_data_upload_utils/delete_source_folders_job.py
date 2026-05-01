@@ -21,8 +21,7 @@ from aind_data_upload_utils.delete_staging_folder_job import (
     DeleteStagingFolderJob,
 )
 
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-logging.basicConfig(level=LOG_LEVEL)
+
 
 
 class DirectoriesToDeleteConfigs(BaseModel):

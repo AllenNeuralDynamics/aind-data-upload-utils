@@ -17,8 +17,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 
 # Set log level from env var
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-logging.basicConfig(level=LOG_LEVEL)
+
 
 
 class JobSettings(BaseSettings):

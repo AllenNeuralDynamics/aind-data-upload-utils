@@ -21,7 +21,9 @@ dependencies = [
     'pydantic>2.9',
     'pydantic-settings>=2.8',
     'boto3',
-    'requests'
+    'requests',
+    'python-json-logger',
+    'PyYAML'
 ]
 
 [project.optional-dependencies]

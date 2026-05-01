@@ -18,9 +18,7 @@ from typing import List, Optional
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
-# Set log level from env var
-LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
-logging.basicConfig(level=LOG_LEVEL)
+
 
 
 class JobSettings(BaseSettings):

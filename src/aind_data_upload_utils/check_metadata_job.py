@@ -13,9 +13,7 @@ from typing import Set, Tuple, Union
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-# Set log level from env var
-LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
-logging.basicConfig(level=LOG_LEVEL)
+
 
 
 class JobSettings(BaseSettings):

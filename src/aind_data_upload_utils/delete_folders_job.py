@@ -19,8 +19,7 @@ from aind_data_upload_utils.delete_staging_folder_job import (
     DeleteStagingFolderJob,
 )
 
-LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING")
-logging.basicConfig(level=LOG_LEVEL)
+
 
 
 class JobSettings(BaseSettings):
