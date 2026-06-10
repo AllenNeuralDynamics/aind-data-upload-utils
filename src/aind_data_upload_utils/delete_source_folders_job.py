@@ -169,9 +169,16 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
         metadata_dir = self.job_settings.directories.metadata_dir
         for metadata_file in metadata_files_in_both_places:
             local_file = Path(metadata_dir) / metadata_file
-            if not self.job_settings.dry_run:
+            if not self.job_settings.dry_run and os.path.isfile(local_file):
                 logging.info(f"Removing {local_file}")
                 os.remove(local_file)
+            elif not self.job_settings.dry_run and not os.path.isfile(
+                local_file
+            ):
+                logging.warning(
+                    f"{local_file} not found! It may have been in a parent "
+                    f"directory already removed."
+                )
             else:
                 logging.info(f"(DRYRUN): os.remove('{local_file}')")
         is_empty = True
@@ -229,10 +236,12 @@ if __name__ == "__main__":
         "--job-settings",
         required=False,
         type=str,
-        help=(r"""
+        help=(
+            r"""
             Instead of init args the job settings can optionally be passed in
             as a json string in the command line.
-            """),
+            """
+        ),
     )
     cli_args = parser.parse_args(sys_args)
     main_job_settings = JobSettings.model_validate_json(cli_args.job_settings)
