@@ -299,11 +299,15 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         )
         self.assertEqual(5, len(captured.output))
 
+    @patch("os.path.isfile")
     @patch("os.scandir")
-    def test_remove_metadata_directory(self, mock_scandir: MagicMock):
-        """Tests remove_metadata_directory method when empty."""
+    def test_remove_metadata_directory(
+        self, mock_scandir: MagicMock, mock_isfile: MagicMock
+    ):
+        """Tests remove_metadata_directory method when files are there."""
 
         mock_scandir.return_value.__enter__.return_value = []
+        mock_isfile.return_value = True
         metadata_files = {"subject.json", "data_description.json"}
         with self.assertLogs(level="INFO") as captured:
             self.actual_run_job._remove_metadata_directory(
@@ -313,13 +317,34 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         self.assertEqual(2, len(self.mock_remove.mock_calls))
         self.mock_rmdir.assert_called_once()
 
+    @patch("os.path.isfile")
+    @patch("os.scandir")
+    def test_remove_metadata_directory_already_removed(
+        self, mock_scandir: MagicMock, mock_isfile: MagicMock
+    ):
+        """Tests remove_metadata_directory method when the parent directory
+        is already removed."""
+
+        mock_scandir.return_value.__enter__.return_value = []
+        mock_isfile.return_value = False
+        metadata_files = {"subject.json", "data_description.json"}
+        with self.assertLogs(level="INFO") as captured:
+            self.actual_run_job._remove_metadata_directory(
+                metadata_files_in_both_places=metadata_files
+            )
+        self.assertEqual(3, len(captured.output))
+        self.assertEqual(0, len(self.mock_remove.mock_calls))
+        self.mock_rmdir.assert_called_once()
+
+    @patch("os.path.isfile")
     @patch("os.scandir")
     def test_remove_metadata_directory_not_empty(
-        self, mock_scandir: MagicMock
+        self, mock_scandir: MagicMock, mock_isfile: MagicMock
     ):
         """Tests remove_metadata_directory method when not emptied."""
 
         mock_scandir.return_value.__enter__.return_value = ["extra_folder"]
+        mock_isfile.return_value = True
         metadata_files = {"subject.json", "data_description.json"}
         with self.assertLogs(level="WARNING"):
             self.actual_run_job._remove_metadata_directory(
