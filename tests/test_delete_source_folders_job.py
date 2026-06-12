@@ -353,6 +353,29 @@ class TestDeleteSourceFoldersJob(unittest.TestCase):
         self.assertEqual(2, len(self.mock_remove.mock_calls))
         self.mock_rmdir.assert_not_called()
 
+    @patch("os.path.isdir")
+    @patch("os.path.isfile")
+    @patch("os.scandir")
+    def test_remove_metadata_directory_no_directory(
+        self,
+        mock_scandir: MagicMock,
+        mock_isfile: MagicMock,
+        mock_isdir: MagicMock,
+    ):
+        """Tests remove_metadata_directory method when no directory."""
+
+        mock_isdir.return_value = False
+        mock_isfile.return_value = False
+        metadata_files = {"subject.json", "data_description.json"}
+        with self.assertLogs(level="WARNING") as captured:
+            self.actual_run_job._remove_metadata_directory(
+                metadata_files_in_both_places=metadata_files
+            )
+        self.mock_remove.assert_not_called()
+        mock_scandir.assert_not_called()
+        self.mock_rmdir.assert_not_called()
+        self.assertEqual(3, len(captured.output))
+
     @patch("os.scandir")
     def test_remove_metadata_directory_dry_run(self, mock_scandir: MagicMock):
         """Tests remove_metadata_directory method when dry run set."""
