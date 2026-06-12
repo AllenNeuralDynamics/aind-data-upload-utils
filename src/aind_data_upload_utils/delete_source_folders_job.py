@@ -182,17 +182,23 @@ class DeleteSourceFoldersJob(DeleteStagingFolderJob):
             else:
                 logging.info(f"(DRYRUN): os.remove('{local_file}')")
         is_empty = True
-        with os.scandir(metadata_dir) as it:
-            if any(it):
-                is_empty = False
+        if os.path.isdir(metadata_dir):
+            with os.scandir(metadata_dir) as it:
+                if any(it):
+                    is_empty = False
         if not is_empty and not self.job_settings.dry_run:
             logging.warning(
                 f"There are extra files or folders found in {metadata_dir}! "
                 f"Will not auto-delete!"
             )
-        elif not self.job_settings.dry_run:
+        elif not self.job_settings.dry_run and os.path.isdir(metadata_dir):
             logging.info(f"Removing {metadata_dir}")
             os.rmdir(metadata_dir)
+        elif not os.path.isdir(metadata_dir):
+            logging.warning(
+                f"{metadata_dir} not found! It may have been in a parent "
+                f"directory already removed."
+            )
         else:
             logging.info(f"(DRYRUN): os.rmdir('{metadata_dir}')")
 
