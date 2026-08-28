@@ -30,7 +30,7 @@ class TestCreateSymLinksJob(unittest.TestCase):
         self.assertEqual(expected_list_of_files, list_of_files)
 
     def test_extract_list_of_files_with_chunk(self):
-        """Tests _extract_list_of_files with with chunk parameter"""
+        """Tests _extract_list_of_files with chunk parameter"""
 
         settings = JobSettings(
             input_source=str(EXAMPLE_SOURCE_DIR),

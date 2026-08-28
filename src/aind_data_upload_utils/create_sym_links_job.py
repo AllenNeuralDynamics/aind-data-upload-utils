@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 import sys
 from glob import glob
 from typing import List, Optional
@@ -67,13 +68,16 @@ class CreateSymLinksJob:
             paths_to_process = [self.job_settings.input_source]
         else:
             all_paths = glob(
-                os.path.join(directory_path, "**", f"*{chunk}*"),
+                os.path.join(directory_path, "**", "*"),
                 recursive=True,
             )
             paths_to_process = [
                 path
                 for path in all_paths
-                if os.path.isfile(path) or os.path.islink(path)
+                if (
+                    (os.path.isfile(path) or os.path.islink(path))
+                    and re.search(chunk, path)
+                )
             ]
         return paths_to_process
 
