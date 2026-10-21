@@ -165,13 +165,16 @@ class TestWebhookNotificationJob(unittest.TestCase):
 
     def test_exclude_list_integration(self):
         """Tests exclusion by both user email and capsule URL."""
-        exclude_items = self.example_job.read_exclude_list()
-        csv_data = self.example_job.read_csv_file()
-        filtered_data = self.example_job.filter_csv_data(
-            csv_data, exclude_items
-        )
-        user_data = self.example_job.group_by_user(filtered_data)
 
+        with self.assertLogs(level="INFO") as captured:
+            exclude_items = self.example_job.read_exclude_list()
+            csv_data = self.example_job.read_csv_file()
+            filtered_data = self.example_job.filter_csv_data(
+                csv_data, exclude_items
+            )
+            user_data = self.example_job.group_by_user(filtered_data)
+
+        self.assertEqual(2, len(captured.output))
         self.assertNotIn("user2@example.com", user_data)
         self.assertIn("user1@example.com", user_data)
         self.assertIn("user3@example.com", user_data)

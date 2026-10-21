@@ -278,8 +278,6 @@ class TestDeleteChunkFilesJob(unittest.TestCase):
         ]
         with self.assertLogs(level="DEBUG") as captured:
             self.example_job.run_job()
-        print(mock_remove_list_of_files.mock_calls)
-        print(captured.output)
         mock_remove_list_of_files.assert_called_once_with(
             ["abc/behavior-videos/x_1.mp4"]
         )
