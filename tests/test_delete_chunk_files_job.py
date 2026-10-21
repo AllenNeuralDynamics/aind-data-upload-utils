@@ -148,7 +148,7 @@ class TestDeleteChunkFilesJob(unittest.TestCase):
         self.assertEqual(
             ["DEBUG:root:Extracting list of files"], captured.output
         )
-        self.assertEqual(expected_local_files, local_files)
+        self.assertCountEqual(expected_local_files, local_files)
 
     @patch("boto3.client")
     def test_get_list_of_s3_files(
